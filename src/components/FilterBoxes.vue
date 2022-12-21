@@ -20,8 +20,8 @@
         </div>
         <div class="col-md-9">
           <p>
-            <template v-for="item of SUBJECTS" :key="item">
-              <input class="form-check-input" type="checkbox" checked />
+            <template v-for="item in SUBJECTS" :key="item">
+              <input class="form-check-input" type="checkbox" checked :value="item" v-model="subjectSelections" />
               <label class="form-check-label">{{ item }}</label>
             </template>
           </p>
@@ -38,9 +38,13 @@ import { DAYS_OF_WEEK,SUBJECTS } from '../constants';
 const emit = defineEmits(["updateFilters"]);
 
 const daySelections = ref([0,1,2,3,4]);
+const subjectSelections = ref(SUBJECTS);
 watch(() => daySelections.value,value => {
-  emit("updateFilters",value);
+  emit("updateFilters",value,subjectSelections.value);
 });
+watch(() => subjectSelections.value,value => {
+  emit("updateFilters",daySelections.value,value);
+})
 </script>
 
 <style scoped>

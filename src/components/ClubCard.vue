@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <img :src="item.image" class="card-img-top">
+    <img :src="imageURL" class="card-img-top">
     <div class="card-body">
       <h5 class="card-title">{{ item.name }}</h5>
       <div class="card-text">
@@ -15,10 +15,16 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
+import { defineProps,ref } from 'vue';
+import { getImageURL } from '../db';
 import { formatMeetingTime } from '../timeFormat';
 
-defineProps(["item"]);
+const props = defineProps(["item"]);
+
+const imageURL = ref("");
+(async () => {
+  imageURL.value = await getImageURL(props.item.image);
+})();
 </script>
 
 <style scoped>

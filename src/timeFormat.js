@@ -1,7 +1,7 @@
 import { DAYS_OF_WEEK,BLOCKS } from './constants';
 
 function formatMeetingTime(meetingTime) {
-  if ( ! meetingTime ) return "";
+  if ( ! meetingTime || Object.keys(meetingTime).length == 0 ) return "";
 
   let hour = meetingTime.hour;
   let ampm = "AM";
@@ -23,7 +23,7 @@ function formatMeetingTime(meetingTime) {
 }
 
 function timesAreEqual(a,b) {
-  return (
+  return a !== undefined && b !== undefined && (
     a.day == b.day &&
     a.hour == b.hour &&
     a.minute == b.minute
