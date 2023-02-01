@@ -48,11 +48,11 @@ watch(() => subjectSelections.value,value => {
 </script>
 
 <style scoped>
-.card {
-  padding-bottom: 0;
-}
-.form-check-label {
-  margin-left: .25rem;
-  margin-right: .75rem;
-}
+  .card {
+    padding-bottom: 0;
+  }
+  .form-check-label {
+    margin-left: .25rem;
+    margin-right: .75rem;
+  }
 </style>

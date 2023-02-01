@@ -16,7 +16,9 @@
             <span>{{ selectedItem.meeting_room }}</span>
           </p>
           <p>
-            <span>Student leader:</span>
+            <span>
+              Student leader{{ Object.keys(selectedItem.leader).length != 1 ? "s" : "" }}:
+            </span>
             <i class="fa-solid fa-envelope" />
             <template v-for="(leader,key,index) of selectedItem.leader" :key="leader">
               <a :href="`mailto:${leader.email}`">{{ leader.name }}</a>
@@ -35,7 +37,7 @@
             How to sign up: {{ selectedItem.sign_up }}
           </p>
           <p class="description">Mission statement: {{ selectedItem.description }}</p>
-          <button v-if="canEdit" class="btn btn-outline-primary" @click="$emit('openEditing')">Edit listing</button>
+          <button v-if="canEdit" class="btn btn-primary" @click="$emit('openEditing')">Edit listing</button>
         </div>
       </div>
     </div>
@@ -64,28 +66,28 @@ const canEdit = computed(() => {
 </script>
 
 <style scoped>
-.modal-dialog {
-  max-width: 800px;
-}
-.modal-top {
-  text-align: center;
-}
-.fa-solid {
-  padding-left: .25rem;
-}
-h5 {
-  padding-bottom: .5rem;
-}
-img {
-  width: 50%;
-  float: right;
-  margin-bottom: 1rem;
-  border-radius: 5px;
-}
-.description {
-  margin-bottom: .25rem;
-}
-.btn {
-  margin-top: .5rem;
-}
+  .modal-dialog {
+    max-width: 800px;
+  }
+  .modal-top {
+    text-align: center;
+  }
+  .fa-solid {
+    padding-left: .25rem;
+  }
+  h5 {
+    padding-bottom: .5rem;
+  }
+  img {
+    width: 50%;
+    float: right;
+    margin-bottom: 1rem;
+    border-radius: 5px;
+  }
+  .description {
+    margin-bottom: .25rem;
+  }
+  .btn {
+    margin-top: .5rem;
+  }
 </style>

@@ -1,5 +1,20 @@
 const DAYS_OF_WEEK = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
-const SUBJECTS = ["Computer Science","Math"];
+const SUBJECTS = [
+  "Business",
+  "Computer Science",
+  "Environmentalism",
+  "Foreign Language",
+  "Games/Special Interests",
+  "Group Support",
+  "Literature",
+  "Math",
+  "Performing Arts",
+  "Physical Science",
+  "Visual Arts",
+  "Community Service",
+  "Social Science",
+  "Sports"
+];
 const BLOCKS = {
   x: {
     day: 4,

@@ -5,13 +5,20 @@
         <div class="modal-body">
           <div v-if="newRegister">
             <h5>Registering a new club/organization</h5>
-            <p>Please only fill out and publish this form when (a) you are sure that you want to form a new club/organization and (b) you have already booked assembly time to announce it. Malicious submissions will be deleted.</p>
+            <p>
+              Please only fill out this form when:
+              <ul>
+                <li>you are sure that you want to form a new club/organization and</li>
+                <li>you have already booked assembly time to announce it.</li>
+              </ul>
+              Malicious submissions will be deleted.
+            </p>
             <hr />
           </div>
           <div class="image-box">
             <input type="file" name="file" ref="fileButton" class="d-none" @change="triggerImageUpload" />
             <div class="file-upload-box">
-              <button class="btn btn-outline-primary file-upload" @click="fileButton.click()">
+              <button class="btn btn-primary file-upload" @click="fileButton.click()">
                 {{ imageURL == "" ? "Upload" : "Replace" }} image
               </button>
             </div>
@@ -55,12 +62,12 @@
           <div>
             <p>
               Student leader(s):
-              <button class="btn btn-outline-success" @click="addLeader()">Add</button>
+              <button class="btn btn-success" @click="addLeader()">Add</button>
             </p>
             <div v-for="(leader,key) of editableItem.leader" :key="leader" class="leader-box">
               <input type="text" placeholder="Display name" v-model="leader.name" />
               <input type="email" placeholder="Email" v-model="leader.email" />
-              <button class="btn btn-outline-danger remove-button" @click="() => removeLeader(key)">-</button>
+              <button class="btn btn-danger remove-button" @click="() => removeLeader(key)">-</button>
             </div>
           </div>
           <div>
@@ -76,14 +83,15 @@
           </div>
           <div>
             <p>How to sign up:</p>
-            <input type="text" placeholder="Sign up info" v-model="editableItem.sign_up" />
+            <input type="text" placeholder="Sign-up info" v-model="editableItem.sign_up" />
           </div>
           <div>
             <p>Mission statement:</p>
             <textarea rows="5" v-model="editableItem.description"></textarea>
           </div>
-          <button class="btn btn-outline-success" @click="saveChanges(); $emit('closeEditing')">{{ newRegister ? "Publish new listing" : "Save edits" }}</button>
-          <button class="btn btn-outline-secondary" @click="$emit('closeEditing')">{{ newRegister ? "Exit without publishing" : "Exit without saving" }}</button>
+          <button class="btn btn-success" @click="saveChanges()">{{ newRegister ? "Publish new listing" : "Save edits" }}</button>
+          <button class="btn btn-secondary" @click="$emit('closeEditing',! newRegister)">{{ newRegister ? "Exit without publishing" : "Exit without saving" }}</button>
+          <p>{{ areErrors ? "You have not completed all above fields." : "" }}</p>
         </div>
       </div>
     </div>
@@ -91,12 +99,14 @@
 </template>
 
 <script setup>
-import { defineProps,ref,watch } from 'vue';
+import { defineProps,defineEmits,ref,watch } from 'vue';
 import { formatMeetingTime,timesAreEqual } from '../timeFormat';
 import { DAYS_OF_WEEK,SUBJECTS,BLOCKS } from '../constants';
 import { writeEntry,getImageURL,uploadImage,randomHexID } from '../db';
 
 const props = defineProps(["selectedItem","selectedKey","newRegister"]);
+const emit = defineEmits(["closeEditing"]);
+
 const editableItem = ref({advisor:{},leader:{},meeting_time:{}});
 const meetingBlock = ref("na");
 const meetingHour = ref(0);
@@ -117,12 +127,13 @@ function timeDataUpdate(value,skipBlocks) {
 
 const imageURL = ref("");
 watch(() => editableItem.value,async () => {
-  console.log(editableItem.value.image)
   if ( editableItem.value.image ) imageURL.value = await getImageURL(editableItem.value.image);
   else imageURL.value = "";
+  areErrors.value = false;
 });
 
 watch(() => props.selectedItem,value => {
+  console.log(value)
   editableItem.value = props.selectedItem;
   timeDataUpdate(value,false);
 });
@@ -157,8 +168,32 @@ async function triggerImageUpload() {
   imageURL.value = await getImageURL(editableItem.value.image);
 }
 
+function isFormValid() {
+  if (
+    editableItem.value.name == "" ||
+    editableItem.value.meeting_room == "" ||
+    editableItem.value.advisor.email == "" ||
+    editableItem.value.advisor.name == "" ||
+    editableItem.value.subject == "" ||
+    editableItem.value.sign_up == "" ||
+    editableItem.value.description == "" ||
+    editableItem.value.image == "" ||
+    Object.keys(editableItem.value.leader).length == 0
+  ) return false;
+  for ( const leader of Object.values(editableItem.value.leader) ) {
+    if ( leader.email == "" || leader.name == "" ) return false;
+  }
+  return true;
+}
+
+const areErrors = ref(false);
 function saveChanges() {
-  writeEntry(props.selectedKey,editableItem.value);
+  if ( isFormValid() ) {
+    writeEntry(props.selectedKey,editableItem.value);
+    emit("closeEditing",true);
+  } else {
+    areErrors.value = true;
+  }
 }
 </script>
 

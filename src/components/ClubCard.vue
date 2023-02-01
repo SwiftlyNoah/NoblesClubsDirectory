@@ -28,17 +28,17 @@ const imageURL = ref("");
 </script>
 
 <style scoped>
-.card {
-  cursor: pointer;
-  margin-bottom: 1rem;
-}
-.description {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.card-text *:last-child {
-  margin-bottom: 0;
-}
+  .card {
+    cursor: pointer;
+    margin-bottom: 1rem;
+  }
+  .description {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-text *:last-child {
+    margin-bottom: 0;
+  }
 </style>
