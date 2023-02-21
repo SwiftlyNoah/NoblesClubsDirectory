@@ -10,7 +10,7 @@
             <i class="fa-solid fa-clock" />
             <span>{{ formatMeetingTime(selectedItem.meeting_time) }}</span>
           </p>
-          <p>
+          <p v-if="(selectedItem.meeting_room || '').trim()">
             <span>Meeting room:</span>
             <i class="fa-solid fa-clock" />
             <span>{{ selectedItem.meeting_room }}</span>
@@ -36,7 +36,7 @@
           <p>
             How to sign up: {{ selectedItem.sign_up }}
           </p>
-          <p class="description">Mission statement: {{ selectedItem.description }}</p>
+          <p class="description" v-if="selectedItem.description">Mission statement: {{ selectedItem.description }}</p>
           <button v-if="canEdit" class="btn btn-primary" @click="$emit('openEditing')">Edit listing</button>
         </div>
       </div>
@@ -53,15 +53,21 @@ const props = defineProps(["selectedItem","userData"]);
 
 const imageURL = ref("");
 watch(() => props.selectedItem,async () => {
+  console.log(props.selectedItem)
   if ( props.selectedItem.image ) imageURL.value = await getImageURL(props.selectedItem.image);
 });
 
+/*function emailsMatch(emailA,emailB) {
+  return emailA.toLowerCase() == emailB.toLowerCase() || (emailA.charAt(0) + emailA.split("_")[1].split("@")[0]).toLowerCase() == emailB.split("@")[0].slice(0,-2).toLowerCase();
+}*/
+
 const canEdit = computed(() => {
   if ( ! props.userData ) return false;
-  for ( const leader of Object.values(props.selectedItem.leader) ) {
-    if ( leader.email == props.userData.email ) return true;
+  return true;
+  /*for ( const leader of Object.values(props.selectedItem.leader) ) {
+    if ( emailsMatch(leader.email,props.userData.email) ) return true;
   }
-  return props.selectedItem.advisor.email == props.userData.email;
+  return props.selectedItem.advisor.email && emailsMatch(props.selectedItem.advisor.email,props.userData.email);*/
 });
 </script>
 

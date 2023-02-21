@@ -133,7 +133,7 @@ watch(() => editableItem.value,async () => {
 });
 
 watch(() => props.selectedItem,value => {
-  console.log(value)
+  console.log("hello",value)
   editableItem.value = props.selectedItem;
   timeDataUpdate(value,false);
 });
@@ -171,9 +171,9 @@ async function triggerImageUpload() {
 function isFormValid() {
   if (
     editableItem.value.name == "" ||
-    editableItem.value.meeting_room == "" ||
-    editableItem.value.advisor.email == "" ||
-    editableItem.value.advisor.name == "" ||
+    //editableItem.value.meeting_room == "" ||
+    //editableItem.value.advisor.email == "" ||
+    //editableItem.value.advisor.name == "" ||
     editableItem.value.subject == "" ||
     editableItem.value.sign_up == "" ||
     editableItem.value.description == "" ||

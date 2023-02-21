@@ -14,8 +14,8 @@
             <button class="btn btn-light" @click="signInPath">Sign In</button>
           </li>
           <template v-if="userData">
-            <li class="nav-item">
-              <a class="nav-link">
+            <li class="nav-item welcome">
+              <a class="nav-link ">
                 Welcome, {{ userData.first_name }}
               </a>
             </li>
@@ -73,6 +73,7 @@
         </template>
       </div>
     </div>
+    <i v-if="filteredDataKeys.length == 0" class="no-results">No results!</i>
     <hr />
     <div class="footer">
       <img src="@/assets/logo.png" />
@@ -89,6 +90,7 @@
 <script setup>
 import { ref } from 'vue';
 import { setupDB,signIn,randomHexID } from './db';
+import { SUBJECTS } from './constants';
 import ClubCard from './components/ClubCard';
 import ClubModal from './components/ClubModal';
 import EditModal from './components/EditModal';
@@ -122,7 +124,7 @@ setupDB(dataReturned => {
     const additions = keysReturned.filter(item => dataKeys.value.indexOf(item) == -1);
     dataKeys.value = dataKeys.value.concat(additions);
   }
-  refilterDataKeys([0,1,2,3,4],["Computer Science","Math"]);
+  refilterDataKeys([0,1,2,3,4],SUBJECTS);
 });
 
 const filteredDataKeys = ref([]);
@@ -154,6 +156,7 @@ function showModal(key) {
 }
 
 function openEditing() {
+  console.log(selectedKey,data.value[selectedKey.value])
   clubModal.hide();
   editModal.show();
 }
@@ -247,6 +250,9 @@ function registerNew() {
       text-align: right;
     }
   }
+  .welcome {
+      margin-right: .25rem;
+    }
   .navbar-toggler {
     border-color: rgba(255,255,255,0.75) !important;
   }
@@ -328,5 +334,9 @@ function registerNew() {
   .footer p {
     font-size: 1rem;
     margin-left: 2rem;
+  }
+  .no-results {
+    display: block;
+    text-align: center;
   }
 </style>

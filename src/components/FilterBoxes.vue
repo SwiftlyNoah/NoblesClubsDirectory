@@ -7,23 +7,30 @@
         </div>
         <div class="col-md-9">
           <p>
-            <template v-for="(item,index) in DAYS_OF_WEEK" :key="item">
+            <nobr v-for="(item,index) in DAYS_OF_WEEK" :key="item">
               <input class="form-check-input" type="checkbox" checked :value="index" v-model="daySelections" />
               <label class="form-check-label">{{ item }}</label>
-            </template>
+            </nobr>
+            <br />
+            <button class="btn btn-primary" @click="daySelections = [0,1,2,3,4]">Select all</button>
+            <button class="btn btn-primary" @click="daySelections = []">Deselect all</button>
           </p>
         </div>
       </div>
+      <hr />
       <div class="row">
         <div class="col-md-3">
           <b>Subjects</b>
         </div>
         <div class="col-md-9">
           <p>
-            <template v-for="item in SUBJECTS" :key="item">
+            <nobr v-for="item in SUBJECTS" :key="item">
               <input class="form-check-input" type="checkbox" checked :value="item" v-model="subjectSelections" />
               <label class="form-check-label">{{ item }}</label>
-            </template>
+            </nobr>
+            <br />
+            <button class="btn btn-primary" @click="subjectSelections = SUBJECTS">Select all</button>
+            <button class="btn btn-primary" @click="subjectSelections = []">Deselect all</button>
           </p>
         </div>
       </div>
@@ -54,5 +61,12 @@ watch(() => subjectSelections.value,value => {
   .form-check-label {
     margin-left: .25rem;
     margin-right: .75rem;
+  }
+  .btn {
+    margin-top: .5rem;
+    margin-right: .5rem;
+  }
+  hr {
+    margin-top: 0;
   }
 </style>
