@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <a class="navbar-brand" href="#">
         <img src="@/assets/logo_white.png" />
-        Club Directory
+        Clubs &amp; Organizations Directory
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -58,17 +58,17 @@
     <hr />
     <div class="row">
       <div class="col-md-4">
-        <template v-for="key in filteredDataKeys.slice(0,filteredDataKeys.length / 3)" :key="key">
+        <template v-for="key in filteredDataKeys.slice(0,Math.ceil(filteredDataKeys.length / 3))" :key="key">
           <ClubCard :item="data[key]" @click="() => showModal(key)" />
         </template>
       </div>
       <div class="col-md-4">
-        <template v-for="key in filteredDataKeys.slice(filteredDataKeys.length / 3,2 * filteredDataKeys.length / 3)" :key="key">
+        <template v-for="key in filteredDataKeys.slice(Math.ceil(filteredDataKeys.length / 3),Math.ceil(2 * filteredDataKeys.length / 3))" :key="key">
           <ClubCard :item="data[key]" @click="() => showModal(key)" />
         </template>
       </div>
       <div class="col-md-4">
-        <template v-for="key in filteredDataKeys.slice(2 * filteredDataKeys.length / 3)" :key="key">
+        <template v-for="key in filteredDataKeys.slice(Math.ceil(2 * filteredDataKeys.length / 3))" :key="key">
           <ClubCard :item="data[key]" @click="() => showModal(key)" />
         </template>
       </div>
@@ -133,7 +133,7 @@ function refilterDataKeys(daySelections,subjectSelections) {
   for ( const key of dataKeys.value ) {
     if (
       daySelections.indexOf(data.value[key].meeting_time.day) > -1 &&
-      subjectSelections.indexOf(data.value[key].subject) > -1
+      subjectSelections.indexOf(data.value[key].subject) > -1 && data.value[key].name != "Robotics Club"
     ) result.push(key);
   }
   filteredDataKeys.value = result;

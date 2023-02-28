@@ -41,6 +41,7 @@ async function signIn() {
 
 const imageURLCache = reactive({});
 async function getImageURL(image) {
+  if ( ! image.startsWith("i" ) ) return "/pictures/" + image;
   console.log(imageURLCache)
   if ( imageURLCache[image] ) {
     return imageURLCache[image];

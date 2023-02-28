@@ -18,9 +18,10 @@
           <div class="image-box">
             <input type="file" name="file" ref="fileButton" class="d-none" @change="triggerImageUpload" />
             <div class="file-upload-box">
-              <button class="btn btn-primary file-upload" @click="fileButton.click()">
+              <!--<button class="btn btn-primary file-upload" @click="fileButton.click()">
                 {{ imageURL == "" ? "Upload" : "Replace" }} image
-              </button>
+              </button>-->
+              <i>Image uploads are not currently available; this feature will be available tomorrow.</i>
             </div>
             <img :src="imageURL" />
           </div>
