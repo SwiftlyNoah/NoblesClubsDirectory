@@ -32,6 +32,7 @@ async function signIn() {
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const result = await signInWithPopup(auth,provider);
+  if ( ! result.user.email.endsWith("@nobles.edu") ) return;
   return {
     full_name: result.user.displayName,
     first_name: result.user.displayName.split(" ")[0],

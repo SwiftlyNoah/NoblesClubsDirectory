@@ -41,4 +41,7 @@ const imageURL = ref("");
   .card-text *:last-child {
     margin-bottom: 0;
   }
+  .card-img-top {
+    text-indent: -10000px;
+  }
 </style>
