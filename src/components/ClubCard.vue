@@ -7,7 +7,7 @@
         <p class="description">{{ item.description }}</p>
         <p>
           <i class="fa-solid fa-clock"></i>
-          <i>{{ formatMeetingTime(item.meeting_time) }}</i>
+          <i>{{ formatMeetingTime(Object.entries(item.meeting_time)[0][1]) }}</i>
         </p>
       </div>
     </div>

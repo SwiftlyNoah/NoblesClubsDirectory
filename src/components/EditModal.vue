@@ -1,4 +1,5 @@
 <template>
+  <!-- eslint-disable vue/no-unused-vars -->
   <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -18,42 +19,22 @@
           <div class="image-box">
             <input type="file" name="file" ref="fileButton" class="d-none" @change="triggerImageUpload" />
             <div class="file-upload-box">
-              <!--<button class="btn btn-primary file-upload" @click="fileButton.click()">
+              <button class="btn btn-primary file-upload" @click="fileButton.click()">
                 {{ imageURL == "" ? "Upload" : "Replace" }} image
-              </button>-->
-              <i>Image uploads are not currently available; this feature will be available tomorrow.</i>
+              </button>
+              <!--<i>Image uploads are not currently available; this feature will be available tomorrow.</i>-->
             </div>
             <img :src="imageURL" />
           </div>
           <input type="text" class="h5-input" placeholder="Club/org name" v-model="editableItem.name" />
           <div>
-            <span>Meeting time:</span>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" value="x" v-model="meetingBlock" />
-              <label class="form-check-label">{{ formatMeetingTime(BLOCKS.x) }}</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" value="o" v-model="meetingBlock" />
-              <label class="form-check-label">{{ formatMeetingTime(BLOCKS.o) }}</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" value="na" v-model="meetingBlock" />
-              <label class="form-check-label">Other</label>
-            </div>
-            <template v-if="meetingBlock == 'na'">
-              <select class="form-select hour" v-model="meetingHour">
-                <option v-for="hour in [...Array(12).keys()]" :key="hour" :value="hour">{{ hour == 0 ? 12 : hour }}</option>
-              </select>
-              <select class="form-select minute" v-model="editableItem.meeting_time.minute">
-                <option v-for="minute in [...Array(12).keys()]" :key="minute" :value="minute * 5">{{ minute < 2 ? "0" + (minute * 5) : minute * 5 }}</option>
-              </select>
-              <select class="form-select" v-model="meetingAMPM">
-                <option value="am">AM</option>
-                <option value="pm">PM</option>
-              </select>
-              <select class="form-select days" v-model="editableItem.meeting_time.day">
-                <option v-for="(day,index) in DAYS_OF_WEEK" :key="index" :value="index">{{ day }}s</option>
-              </select>
+            <span>
+              Meeting time(s):
+              <button class="btn btn-success" @click="addMeetingTime()">Add</button>
+            </span>
+            <br />
+            <template v-for="(timeItem,timeItemKey) of editableItem.meeting_time" :key="timeItemKey">
+              <MeetingTimeBox v-if="timeItem.day" :timeItem="timeItem" :canRemove="timeItemKey != 'a'" @updateItem="value => editableItem.meeting_time[timeItemKey] = value" @removeItem="() => delete editableItem.meeting_time[timeItemKey]" />
             </template>
           </div>
           <div>
@@ -101,30 +82,14 @@
 
 <script setup>
 import { defineProps,defineEmits,ref,watch } from 'vue';
-import { formatMeetingTime,timesAreEqual } from '../timeFormat';
-import { DAYS_OF_WEEK,SUBJECTS,BLOCKS } from '../constants';
+import { SUBJECTS } from '../constants';
 import { writeEntry,getImageURL,uploadImage,randomHexID } from '../db';
+import MeetingTimeBox from './MeetingTimeBox';
 
 const props = defineProps(["selectedItem","selectedKey","newRegister"]);
 const emit = defineEmits(["closeEditing"]);
 
 const editableItem = ref({advisor:{},leader:{},meeting_time:{}});
-const meetingBlock = ref("na");
-const meetingHour = ref(0);
-const meetingAMPM = ref("am");
-
-function timeDataUpdate(value,skipBlocks) {
-  if ( ! skipBlocks ) {
-    if ( timesAreEqual(value.meeting_time,BLOCKS.x) ) meetingBlock.value = "x";
-    else if ( timesAreEqual(value.meeting_time,BLOCKS.o) ) meetingBlock.value = "o";
-    else meetingBlock.value = "na";
-  }
-
-  let hourValue = value.meeting_time.hour;
-  meetingAMPM.value = hourValue >= 12 ? "pm" : "am";
-  if ( hourValue > 12 ) hourValue -= 12;
-  meetingHour.value = hourValue;
-}
 
 const imageURL = ref("");
 watch(() => editableItem.value,async () => {
@@ -133,22 +98,8 @@ watch(() => editableItem.value,async () => {
   areErrors.value = false;
 });
 
-watch(() => props.selectedItem,value => {
-  console.log("hello",value)
+watch(() => props.selectedItem,() => {
   editableItem.value = props.selectedItem;
-  timeDataUpdate(value,false);
-});
-
-watch(() => [meetingHour.value,meetingAMPM.value],([hourVarValue,ampmVarValue]) => {
-  let hourValue = hourVarValue;
-  if ( ampmVarValue == "pm" ) hourValue += 12;
-  editableItem.value.meeting_time.hour = hourValue;
-});
-
-watch(() => meetingBlock.value,value => {
-  if ( value == "x" ) editableItem.value.meeting_time = Object.assign({},BLOCKS.x);
-  else if ( value == "o" ) editableItem.value.meeting_time = Object.assign({},BLOCKS.o);
-  timeDataUpdate(editableItem.value,true);
 });
 
 function addLeader() {
@@ -160,6 +111,14 @@ function addLeader() {
 
 function removeLeader(key) {
   delete editableItem.value.leader[key];
+}
+
+function addMeetingTime() {
+  editableItem.value.meeting_time[randomHexID()] = {
+    day: 4,
+    hour: 14,
+    minute: 25
+  };
 }
 
 const fileButton = ref();

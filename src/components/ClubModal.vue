@@ -8,7 +8,7 @@
           <p>
             <span>Meeting time:</span>
             <i class="fa-solid fa-clock" />
-            <span>{{ formatMeetingTime(selectedItem.meeting_time) }}</span>
+            <span>{{ Object.entries(selectedItem.meeting_time).map(item => formatMeetingTime(item[1])).join(", ") }}</span>
           </p>
           <p v-if="(selectedItem.meeting_room || '').trim()">
             <span>Meeting room:</span>

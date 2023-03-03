@@ -1,24 +1,7 @@
-# clubdir
+# Nobles club directory
+Live at [https://nobles-club-directory.github.io](https://nobles-club-directory.github.io)
 
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+<div align="center">
+  <img src="screenshots/cover.png" width="600" /><br />
+  <img src="screenshots/cards.png" width="600" />
+</div>

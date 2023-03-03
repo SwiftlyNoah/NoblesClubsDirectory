@@ -132,11 +132,22 @@ function refilterDataKeys(daySelections,subjectSelections) {
   const result = [];
   for ( const key of dataKeys.value ) {
     if (
-      daySelections.indexOf(data.value[key].meeting_time.day) > -1 &&
-      subjectSelections.indexOf(data.value[key].subject) > -1 && data.value[key].name != "Robotics Club"
+      daySelectionsMatch(daySelections,data.value[key].meeting_time) &&
+      subjectSelections.indexOf(data.value[key].subject) > -1
     ) result.push(key);
   }
   filteredDataKeys.value = result;
+  console.log(filteredDataKeys.value);
+}
+
+function daySelectionsMatch(daySelections,meetingTimes) {
+  if ( ! meetingTimes ) return false;
+  console.log(meetingTimes,"HI!")
+  //return false;
+  for ( const timeItemKey in meetingTimes ) {
+    if ( daySelections.indexOf(meetingTimes[timeItemKey].day) > -1 ) return true;
+  }
+  return false;
 }
 
 const editing = ref(false);
@@ -156,7 +167,6 @@ function showModal(key) {
 }
 
 function openEditing() {
-  console.log(selectedKey,data.value[selectedKey.value])
   clubModal.hide();
   editModal.show();
 }
@@ -193,9 +203,11 @@ function resetEmpty() {
     "leader": {},
     "meeting_room": "",
     "meeting_time": {
-      "day": 4,
-      "hour": 14,
-      "minute": 25
+      "a": {
+        "day": 4,
+        "hour": 14,
+        "minute": 25
+      }
     },
     "name": "",
     "sign_up": "",

@@ -53,7 +53,7 @@ async function getImageURL(image) {
 }
 
 async function uploadImage(file) {
-  const imageName = randomHexID();
+  const imageName = "i" + randomHexID();
   const imageRef = sRef(storage,imageName);
   await uploadBytes(imageRef,file);
   imageURLCache[imageName] = await getDownloadURL(imageRef);
