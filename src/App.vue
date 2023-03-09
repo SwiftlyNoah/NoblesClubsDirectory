@@ -1,45 +1,47 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">
-        <img src="@/assets/logo_white.png" />
-        Clubs &amp; Organizations Directory
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-        <ul class="navbar-nav">
-          <li v-if="! userData" class="nav-item">
-            <button class="btn btn-light" @click="signInPath">Sign In</button>
-          </li>
-          <template v-if="userData">
-            <li class="nav-item welcome">
-              <a class="nav-link ">
-                Welcome, {{ userData.first_name }}
-              </a>
+  <template v-if="headers">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <img src="@/assets/logo_white.png" />
+          Clubs &amp; Organizations Directory
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+          <ul class="navbar-nav">
+            <li v-if="! userData" class="nav-item">
+              <button class="btn btn-light" @click="signInPath">Sign In</button>
             </li>
-            <li class="nav-item">
-              <button class="btn btn-light" @click="registerNew">Register a Club/Org</button>
-            </li>
-            <li class="nav-item">
-              <button class="btn btn-light" @click="signOut">Sign Out</button>
-            </li>
-          </template>
-        </ul>
+            <template v-if="userData">
+              <li class="nav-item welcome">
+                <a class="nav-link ">
+                  Welcome, {{ userData.first_name }}
+                </a>
+              </li>
+              <li class="nav-item">
+                <button class="btn btn-light" @click="registerNew">Register a Club/Org</button>
+              </li>
+              <li class="nav-item">
+                <button class="btn btn-light" @click="signOut">Sign Out</button>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="video-container">
+      <video autoplay muted loop playsinline>
+        <source src="@/assets/bgvid.mp4" type="video/mp4" />
+      </video>
+      <div class="video-filter">
+        <div class="container d-flex align-items-center">
+          <p class="title">Nobles Clubs and Organizations</p>
+        </div>
       </div>
     </div>
-  </nav>
-  <div class="video-container">
-    <video autoplay muted loop playsinline>
-      <source src="@/assets/bgvid.mp4" type="video/mp4" />
-    </video>
-    <div class="video-filter">
-      <div class="container d-flex align-items-center">
-        <p class="title">Nobles Clubs and Organizations</p>
-      </div>
-    </div>
-  </div>
+  </template>
   <div class="container">
     <div class="filters">
       <div class="row filters-menu">
@@ -107,6 +109,8 @@ function shuffle(array) {
   return array;
 }
 
+const headers = ref(location.search != "?noheaders");
+
 const data = ref({});
 const dataKeys = ref([]);
 const selectedKey = ref("");
@@ -137,13 +141,10 @@ function refilterDataKeys(daySelections,subjectSelections) {
     ) result.push(key);
   }
   filteredDataKeys.value = result;
-  console.log(filteredDataKeys.value);
 }
 
 function daySelectionsMatch(daySelections,meetingTimes) {
   if ( ! meetingTimes ) return false;
-  console.log(meetingTimes,"HI!")
-  //return false;
   for ( const timeItemKey in meetingTimes ) {
     if ( daySelections.indexOf(meetingTimes[timeItemKey].day) > -1 ) return true;
   }
