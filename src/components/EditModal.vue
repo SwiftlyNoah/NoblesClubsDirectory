@@ -22,21 +22,10 @@
               <button class="btn btn-primary file-upload" @click="fileButton.click()">
                 {{ imageURL == "" ? "Upload" : "Replace" }} image
               </button>
-              <!--<i>Image uploads are not currently available; this feature will be available tomorrow.</i>-->
             </div>
             <img :src="imageURL" />
           </div>
           <input type="text" class="h5-input" placeholder="Club/org name" v-model="editableItem.name" />
-          <div>
-            <span>
-              Meeting time(s):
-              <button class="btn btn-success" @click="addMeetingTime()">Add</button>
-            </span>
-            <br />
-            <template v-for="(timeItem,timeItemKey) of editableItem.meeting_time" :key="timeItemKey">
-              <MeetingTimeBox v-if="timeItem.day" :timeItem="timeItem" :canRemove="timeItemKey != 'a'" @updateItem="value => editableItem.meeting_time[timeItemKey] = value" @removeItem="() => delete editableItem.meeting_time[timeItemKey]" />
-            </template>
-          </div>
           <div>
             <p>Meeting room:</p>
             <input type="text" placeholder="Meeting room" v-model="editableItem.meeting_room" />
@@ -81,24 +70,23 @@
 </template>
 
 <script setup>
-import { defineProps,defineEmits,ref,watch } from 'vue';
+import { defineProps, defineEmits, ref, watch } from 'vue';
 import { SUBJECTS } from '../constants';
-import { writeEntry,getImageURL,uploadImage,randomHexID } from '../db';
-import MeetingTimeBox from './MeetingTimeBox';
+import { writeEntry, getImageURL, uploadImage, randomHexID } from '../db';
 
-const props = defineProps(["selectedItem","selectedKey","newRegister"]);
+const props = defineProps(["selectedItem", "selectedKey", "newRegister"]);
 const emit = defineEmits(["closeEditing"]);
 
-const editableItem = ref({advisor:{},leader:{},meeting_time:{}});
-
+const editableItem = ref({ advisor: {}, leader: {} });
 const imageURL = ref("");
-watch(() => editableItem.value,async () => {
-  if ( editableItem.value.image ) imageURL.value = await getImageURL(editableItem.value.image);
+
+watch(() => editableItem.value, async () => {
+  if (editableItem.value.image) imageURL.value = await getImageURL(editableItem.value.image);
   else imageURL.value = "";
   areErrors.value = false;
 });
 
-watch(() => props.selectedItem,() => {
+watch(() => props.selectedItem, () => {
   editableItem.value = props.selectedItem;
 });
 
@@ -113,17 +101,8 @@ function removeLeader(key) {
   delete editableItem.value.leader[key];
 }
 
-function addMeetingTime() {
-  editableItem.value.meeting_time[randomHexID()] = {
-    day: 4,
-    hour: 14,
-    minute: 25
-  };
-}
-
 const fileButton = ref();
 async function triggerImageUpload() {
-  console.log("here")
   editableItem.value.image = await uploadImage(fileButton.value.files[0]);
   imageURL.value = await getImageURL(editableItem.value.image);
 }
@@ -131,30 +110,36 @@ async function triggerImageUpload() {
 function isFormValid() {
   if (
     editableItem.value.name == "" ||
-    //editableItem.value.meeting_room == "" ||
-    //editableItem.value.advisor.email == "" ||
-    //editableItem.value.advisor.name == "" ||
     editableItem.value.subject == "" ||
     editableItem.value.sign_up == "" ||
     editableItem.value.description == "" ||
     editableItem.value.image == "" ||
     Object.keys(editableItem.value.leader).length == 0
-  ) return false;
-  for ( const leader of Object.values(editableItem.value.leader) ) {
-    if ( leader.email == "" || leader.name == "" ) return false;
+  )
+    return false;
+  for (const leader of Object.values(editableItem.value.leader)) {
+    if (leader.email == "" || leader.name == "") return false;
   }
   return true;
 }
 
 const areErrors = ref(false);
 function saveChanges() {
-  if ( isFormValid() ) {
-    writeEntry(props.selectedKey,editableItem.value);
-    emit("closeEditing",true);
+  if (isFormValid()) {
+    // Add the new fields to the entry before saving
+    const updatedItem = {
+      ...editableItem.value,
+      is_active: true,
+      is_approved: false,
+    };
+
+    writeEntry(props.selectedKey, updatedItem);
+    emit("closeEditing", true);
   } else {
     areErrors.value = true;
   }
 }
+
 </script>
 
 <style scoped>
@@ -170,7 +155,7 @@ function saveChanges() {
   p {
     margin-bottom: 0;
   }
-  input[type="text"],input[type="email"] {
+  input[type="text"], input[type="email"] {
     width: calc(50% - 16px);
     border: 0;
     border-bottom: 1px solid black;
@@ -181,7 +166,7 @@ function saveChanges() {
   .leader-box {
     width: 50%;
   }
-  .leader-box input[type="text"],.leader-box input[type="email"] {
+  .leader-box input[type="text"], .leader-box input[type="email"] {
     width: calc(90% - 16px);
   }
   .remove-button {
@@ -189,7 +174,7 @@ function saveChanges() {
     margin-top: -64px;
     height: 64px;
   }
-  input[type="text"]:focus,input[type="email"]:focus {
+  input[type="text"]:focus, input[type="email"]:focus {
     border-color: navy !important;
   }
   .h5-input {
@@ -204,12 +189,6 @@ function saveChanges() {
   .form-select {
     display: inline;
     width: calc((50% - 16px - 2rem) / 3);
-  }
-  .form-select.hour {
-    margin-right: 1rem;
-  }
-  .form-select.minute {
-    margin-right: 1rem;
   }
   .form-select.days {
     display: block;

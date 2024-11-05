@@ -5,10 +5,6 @@
       <h5 class="card-title">{{ item.name }}</h5>
       <div class="card-text">
         <p class="description">{{ item.description }}</p>
-        <p>
-          <i class="fa-solid fa-clock"></i>
-          <i>{{ formatMeetingTime(Object.entries(item.meeting_time)[0][1]) }}</i>
-        </p>
       </div>
     </div>
   </div>
@@ -17,7 +13,6 @@
 <script setup>
 import { defineProps,ref } from 'vue';
 import { getImageURL } from '../db';
-import { formatMeetingTime } from '../timeFormat';
 
 const props = defineProps(["item"]);
 

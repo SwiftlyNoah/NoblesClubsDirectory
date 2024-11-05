@@ -11,20 +11,24 @@
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
           <ul class="navbar-nav">
-            <li v-if="! userData" class="nav-item">
+            <li v-if="!userData" class="nav-item">
               <button class="btn btn-light" @click="signInPath">Sign In</button>
             </li>
-            <template v-if="userData">
-              <li class="nav-item welcome">
-                <a class="nav-link ">
-                  Welcome, {{ userData.first_name }}
+            <template v-else>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle user-name" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span class="name-text">{{ userData.first_name }}</span>
+                  <br />
+                  <span class="gray-text">My Clubs</span>
                 </a>
-              </li>
-              <li class="nav-item">
-                <button class="btn btn-light" @click="registerNew">Register a Club/Org</button>
-              </li>
-              <li class="nav-item">
-                <button class="btn btn-light" @click="signOut">Sign Out</button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                  <li>
+                    <button class="dropdown-item" @click="registerNew">Register a Club/Org</button>
+                  </li>
+                  <li>
+                    <button class="dropdown-item" @click="signOut">Sign Out</button>
+                  </li>
+                </ul>
               </li>
             </template>
           </ul>
@@ -51,7 +55,7 @@
         <div class="col-6 text-end">
           <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
             <i class="fa-solid fa-filter" />
-            Filters
+            Subjects
           </button>
         </div>
       </div>
@@ -60,12 +64,12 @@
     <hr />
     <div class="row">
       <div class="col-md-4">
-        <template v-for="key in filteredDataKeys.slice(0,Math.ceil(filteredDataKeys.length / 3))" :key="key">
+        <template v-for="key in filteredDataKeys.slice(0, Math.ceil(filteredDataKeys.length / 3))" :key="key">
           <ClubCard :item="data[key]" @click="() => showModal(key)" />
         </template>
       </div>
       <div class="col-md-4">
-        <template v-for="key in filteredDataKeys.slice(Math.ceil(filteredDataKeys.length / 3),Math.ceil(2 * filteredDataKeys.length / 3))" :key="key">
+        <template v-for="key in filteredDataKeys.slice(Math.ceil(filteredDataKeys.length / 3), Math.ceil(2 * filteredDataKeys.length / 3))" :key="key">
           <ClubCard :item="data[key]" @click="() => showModal(key)" />
         </template>
       </div>
@@ -76,158 +80,10 @@
       </div>
     </div>
     <i v-if="filteredDataKeys.length == 0" class="no-results">No results!</i>
-    <hr />
-    <div class="footer">
-      <img src="@/assets/logo.png" />
-      <p>
-        <b>Noble and Greenough School Club Directory</b><br />
-        Contact <a href="mailto:codingclubleaders@nobles.edu">codingclubleaders@nobles.edu</a> with questions
-      </p>
-    </div>
-    <ClubModal v-show="! editing" :selectedItem="data[selectedKey] || {advisor:{},leader:{},meeting_time:{}}" :userData="userData" @openEditing="openEditing" />
-    <EditModal v-show="editing" :selectedItem="data[selectedKey] || {advisor:{},leader:{},meeting_time:{}}" :selectedKey="selectedKey" :newRegister="newRegister" @closeEditing="closeEditing" />
+    <ClubModal v-show="!editing" :selectedItem="data[selectedKey] || {advisor:{},leader:{},}" :userData="userData" @openEditing="openEditing" />
+    <EditModal v-show="editing" :selectedItem="data[selectedKey] || {advisor:{},leader:{},}" :selectedKey="selectedKey" :newRegister="newRegister" @closeEditing="closeEditing" />
   </div>
 </template>
-
-<script setup>
-import { ref } from 'vue';
-import { setupDB,signIn,randomHexID } from './db';
-import { SUBJECTS } from './constants';
-import ClubCard from './components/ClubCard';
-import ClubModal from './components/ClubModal';
-import EditModal from './components/EditModal';
-import FilterBoxes from './components/FilterBoxes';
-
-function shuffle(array) {
-  let currentIndex = array.length;
-  let randomIndex;
-  while ( currentIndex != 0 ) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex],array[randomIndex]] = [array[randomIndex],array[currentIndex]];
-  }
-  return array;
-}
-
-const headers = ref(location.search != "?noheaders");
-
-const data = ref({});
-const dataKeys = ref([]);
-const selectedKey = ref("");
-const hasShuffled = ref(false);
-const emptyID = ref(null);
-setupDB(dataReturned => {
-  data.value = dataReturned;
-  const emptyIDVar = randomHexID();
-  emptyID.value = emptyIDVar;  
-  const keysReturned = Object.keys(dataReturned).filter(item => item != emptyIDVar);
-  if ( ! hasShuffled.value ) {
-    dataKeys.value = shuffle(keysReturned);
-    hasShuffled.value = true;
-  } else if ( keysReturned.length != dataKeys.value.length ) {
-    const additions = keysReturned.filter(item => dataKeys.value.indexOf(item) == -1);
-    dataKeys.value = dataKeys.value.concat(additions);
-  }
-  refilterDataKeys([0,1,2,3,4],SUBJECTS);
-});
-
-const filteredDataKeys = ref([]);
-function refilterDataKeys(daySelections,subjectSelections) {
-  const result = [];
-  for ( const key of dataKeys.value ) {
-    if (
-      daySelectionsMatch(daySelections,data.value[key].meeting_time) &&
-      subjectSelections.indexOf(data.value[key].subject) > -1
-    ) result.push(key);
-  }
-  filteredDataKeys.value = result;
-}
-
-function daySelectionsMatch(daySelections,meetingTimes) {
-  if ( ! meetingTimes ) return false;
-  for ( const timeItemKey in meetingTimes ) {
-    if ( daySelections.indexOf(meetingTimes[timeItemKey].day) > -1 ) return true;
-  }
-  return false;
-}
-
-const editing = ref(false);
-let clubModal,editModal;
-window.addEventListener("load",() => {
-  // eslint-disable-next-line
-  clubModal = new bootstrap.Modal(document.getElementById("clubModal"));
-  // eslint-disable-next-line
-  editModal = new bootstrap.Modal(document.getElementById("editModal"));
-});
-
-const newRegister = ref(false);
-function showModal(key) {
-  selectedKey.value = key;
-  newRegister.value = false;
-  clubModal.show();
-}
-
-function openEditing() {
-  clubModal.hide();
-  editModal.show();
-}
-
-function closeEditing(openClubModal) {
-  editModal.hide();
-  if ( openClubModal ) clubModal.show();
-}
-
-const userData = ref(null);
-async function signInPath() {
-  const data = await signIn();
-  userData.value = data;
-  localStorage.setItem("userData",JSON.stringify(data));
-}
-
-function signOut() {
-  localStorage.removeItem("userData");
-  location.reload();
-}
-
-window.addEventListener("load",() => {
-  if ( localStorage.getItem("userData") ) userData.value = JSON.parse(localStorage.getItem("userData"));
-});
-
-function resetEmpty() {
-  data.value[emptyID.value] = {
-    "advisor": {
-      "email": "",
-      "name": ""
-    },
-    "description": "",
-    "image": "",
-    "leader": {},
-    "meeting_room": "",
-    "meeting_time": {
-      "a": {
-        "day": 4,
-        "hour": 14,
-        "minute": 25
-      }
-    },
-    "name": "",
-    "sign_up": "",
-    "subject": ""
-  };
-  data.value[emptyID.value].leader[randomHexID()] = {
-    "email": "",
-    "name": ""
-  }
-}
-
-function registerNew() {
-  resetEmpty();
-  selectedKey.value = emptyID.value;
-  newRegister.value = true;
-  console.log(data.value[selectedKey.value])
-  openEditing();
-}
-</script>
 
 <style>
   body {
@@ -237,35 +93,48 @@ function registerNew() {
     font-family: Avenir, Helvetica, Arial, sans-serif;
   }
   .navbar {
-    background-color: #D11D27 !important;
+    background-color: #013366 !important;
   }
-  .navbar-brand,.nav-item a {
+  .navbar-brand, .nav-item a {
     color: white !important;
+    font-family: Garamond, serif;
+    text-align: center;
   }
   .navbar-brand img {
     width: 60px;
     margin-right: 0.5rem;
   }
-  @media (min-width: 992px) {
-    .nav-item:last-child {
-      margin-left: 0.5rem;
-    }
+  .nav-item.dropdown .dropdown-toggle::after {
+    color: #B6C4D7;
+  }
+  .user-name {
+    font-family: Garamond, serif;
+    text-align: right;
+  }
+  .name-text {
+    font-size: 1.5rem;
+  }
+  .gray-text {
+    font-family: Garamond, serif;
+    color: #B6C4D7;
+  }
+  .dropdown-menu {
+    text-align: center;
+    right: 0;
+    left: auto;
+  }
+  .dropdown-menu-end {
+    margin-right: 0;
   }
   @media (max-width: 991px) {
-    .nav-item:first-child a {
-      padding-top: 0;
+    .navbar-nav {
+      text-align: center;
+      width: 100%;
     }
-    .nav-item:last-child {
+    .navbar-toggler {
       margin-top: 0.5rem;
-      margin-bottom: 0.25rem;
-    }
-    .nav-item {
-      text-align: right;
     }
   }
-  .welcome {
-      margin-right: .25rem;
-    }
   .navbar-toggler {
     border-color: rgba(255,255,255,0.75) !important;
   }
@@ -325,31 +194,142 @@ function registerNew() {
     font-size: 3rem;
     text-transform: uppercase;
     font-weight: bold;
-    border-bottom: 5px solid red;
+    font-family: Garamond, serif;
+    border-bottom: 5px solid #013366;
+    text-align: center;
   }
   @media (max-width: 503px) {
     .title {
       font-size: 2rem;
     }
   }
-  .footer {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    padding-bottom: 1rem;
-  }
-  .footer img {
-    display: block;
-    width: 150px;
-  }
-  .footer p {
-    font-size: 1rem;
-    margin-left: 2rem;
-  }
   .no-results {
     display: block;
     text-align: center;
   }
 </style>
+
+
+<script setup>
+import { ref } from 'vue';
+import { setupDB, signIn, randomHexID } from './db';
+import { SUBJECTS } from './constants';
+import ClubCard from './components/ClubCard';
+import ClubModal from './components/ClubModal';
+import EditModal from './components/EditModal';
+import FilterBoxes from './components/FilterBoxes';
+
+function shuffle(array) {
+  let currentIndex = array.length;
+  let randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
+const headers = ref(location.search != "?noheaders");
+const data = ref({});
+const dataKeys = ref([]);
+const selectedKey = ref("");
+const hasShuffled = ref(false);
+const emptyID = ref(null);
+
+setupDB(dataReturned => {
+  data.value = dataReturned;
+  const emptyIDVar = randomHexID();
+  emptyID.value = emptyIDVar;
+  const keysReturned = Object.keys(dataReturned).filter(item => item != emptyIDVar);
+  if (!hasShuffled.value) {
+    dataKeys.value = shuffle(keysReturned);
+    hasShuffled.value = true;
+  } else if (keysReturned.length != dataKeys.value.length) {
+    const additions = keysReturned.filter(item => dataKeys.value.indexOf(item) == -1);
+    dataKeys.value = dataKeys.value.concat(additions);
+  }
+  refilterDataKeys(SUBJECTS);
+});
+
+const filteredDataKeys = ref([]);
+function refilterDataKeys(subjectSelections) {
+  const result = [];
+  for (const key of dataKeys.value) {
+    if (subjectSelections.indexOf(data.value[key].subject) > -1) {
+      result.push(key);
+    }
+  }
+  filteredDataKeys.value = result;
+}
+
+const editing = ref(false);
+let clubModal, editModal;
+
+window.addEventListener("load",() => {
+  // eslint-disable-next-line
+  clubModal = new bootstrap.Modal(document.getElementById("clubModal"));
+  // eslint-disable-next-line
+  editModal = new bootstrap.Modal(document.getElementById("editModal"));
+});
+
+const newRegister = ref(false);
+function showModal(key) {
+  selectedKey.value = key;
+  newRegister.value = false;
+  clubModal.show();
+}
+
+function openEditing() {
+  clubModal.hide();
+  editModal.show();
+}
+
+function closeEditing(openClubModal) {
+  editModal.hide();
+  if (openClubModal) clubModal.show();
+}
+
+const userData = ref(null);
+async function signInPath() {
+  const data = await signIn();
+  userData.value = data;
+  localStorage.setItem("userData", JSON.stringify(data));
+}
+
+function signOut() {
+  localStorage.removeItem("userData");
+  location.reload();
+}
+
+window.addEventListener("load", () => {
+  if (localStorage.getItem("userData")) userData.value = JSON.parse(localStorage.getItem("userData"));
+});
+
+function resetEmpty() {
+  data.value[emptyID.value] = {
+    advisor: {
+      email: "",
+      name: ""
+    },
+    description: "",
+    image: "",
+    leader: {},
+    meeting_room: "",
+    name: "",
+    sign_up: "",
+    subject: ""
+  };
+  data.value[emptyID.value].leader[randomHexID()] = {
+    email: "",
+    name: ""
+  };
+}
+
+function registerNew() {
+  resetEmpty();
+  selectedKey.value = emptyID.value;
+  newRegister.value = true;
+  openEditing();
+}
+</script>

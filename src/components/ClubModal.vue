@@ -5,11 +5,6 @@
         <div class="modal-body">
           <img :src="imageURL" />
           <h5>{{ selectedItem.name }}</h5>
-          <p>
-            <span>Meeting time:</span>
-            <i class="fa-solid fa-clock" />
-            <span>{{ Object.entries(selectedItem.meeting_time).map(item => formatMeetingTime(item[1])).join(", ") }}</span>
-          </p>
           <p v-if="(selectedItem.meeting_room || '').trim()">
             <span>Meeting room:</span>
             <i class="fa-solid fa-clock" />
@@ -47,7 +42,6 @@
 <script setup>
 import { defineProps,ref,watch,computed } from 'vue';
 import { getImageURL } from '../db';
-import { formatMeetingTime } from '../timeFormat';
 
 const props = defineProps(["selectedItem","userData"]);
 
