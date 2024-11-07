@@ -72,7 +72,7 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch } from 'vue';
 import { SUBJECTS } from '../constants';
-import { writeEntry, getImageURL, uploadImage, randomHexID } from '../db';
+import { writeEntry, getImageURL, uploadImage, randomID } from '../db';
 
 const props = defineProps(["selectedItem", "selectedKey", "newRegister"]);
 const emit = defineEmits(["closeEditing"]);
@@ -91,7 +91,7 @@ watch(() => props.selectedItem, () => {
 });
 
 function addLeader() {
-  editableItem.value.leader[randomHexID()] = {
+  editableItem.value.leader[randomID()] = {
     email: "",
     name: ""
   };
@@ -130,7 +130,6 @@ function saveChanges() {
     const updatedItem = {
       ...editableItem.value,
       is_active: true,
-      is_approved: false,
     };
 
     writeEntry(props.selectedKey, updatedItem);

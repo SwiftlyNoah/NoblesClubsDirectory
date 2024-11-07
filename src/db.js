@@ -19,7 +19,7 @@ const storage = getStorage(app);
 
 function setupDB(callback) {
   const dataRef = ref(db, "/clubs/directory/");
-  const approvedQuery = query(dataRef, orderByChild("is_approved"), equalTo(true));
+  const approvedQuery = query(dataRef, orderByChild("is_active"), equalTo(true));
 
   onValue(approvedQuery, snapshot => {
     callback(snapshot.val());
@@ -79,17 +79,20 @@ async function getImageURL(image) {
 }
 
 async function uploadImage(file) {
-  const imageName = randomHexID();
+  const imageName = randomID();
   const imageRef = sRef(storage, "/clubs/" + imageName);
   await uploadBytes(imageRef, file);
   imageURLCache[imageName] = await getDownloadURL(imageRef);
   return imageName;
 }
 
-function randomHexID() {
+function randomID() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  for ( let i = 0; i < 16; i++ ) result += Math.floor(Math.random() * 16).toString(16);
+  for (let i = 0; i < 20; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
   return result;
 }
 
-export { setupDB,writeEntry,signIn,getImageURL,uploadImage,randomHexID };
+export { setupDB,writeEntry,signIn,getImageURL,uploadImage,randomID };

@@ -212,7 +212,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { setupDB, signIn, randomHexID } from './db';
+import { setupDB, signIn, randomID } from './db';
 import { SUBJECTS } from './constants';
 import ClubCard from './components/ClubCard';
 import ClubModal from './components/ClubModal';
@@ -239,7 +239,7 @@ const emptyID = ref(null);
 
 setupDB(dataReturned => {
   data.value = dataReturned;
-  const emptyIDVar = randomHexID();
+  const emptyIDVar = randomID();
   emptyID.value = emptyIDVar;
   const keysReturned = Object.keys(dataReturned).filter(item => item != emptyIDVar);
   if (!hasShuffled.value) {
@@ -320,7 +320,7 @@ function resetEmpty() {
     sign_up: "",
     subject: ""
   };
-  data.value[emptyID.value].leader[randomHexID()] = {
+  data.value[emptyID.value].leader[randomID()] = {
     email: "",
     name: ""
   };
