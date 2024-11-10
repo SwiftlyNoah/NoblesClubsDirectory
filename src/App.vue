@@ -17,7 +17,7 @@
             <template v-else>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle user-name" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span class="name-text">{{ userData.first_name }}</span>
+                  <span class="name-text">{{ userData.first }}</span>
                   <br />
                   <span class="gray-text">My Clubs</span>
                 </a>
@@ -212,12 +212,41 @@
 
 <script setup>
 import { ref } from 'vue';
-import { setupDB, signIn, randomID } from './db';
+import { setupDB, signIn, randomID, getUser } from './db';
 import { SUBJECTS } from './constants';
 import ClubCard from './components/ClubCard';
 import ClubModal from './components/ClubModal';
 import EditModal from './components/EditModal';
 import FilterBoxes from './components/FilterBoxes';
+import { getAuth, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+
+let clubModal, editModal;
+
+const auth = getAuth();
+const userData = ref(null);
+
+window.addEventListener("load", () => {
+  // Check authentication state on load
+  onAuthStateChanged(auth, async (firebase_user) => {
+    if (firebase_user) {
+      // Retrieve user data asynchronously
+      const user = await getUser(firebase_user.uid);
+      userData.value = user;
+      localStorage.setItem("userData", JSON.stringify(user));
+    } else {
+      // No user is signed in, clear userData
+      localStorage.removeItem("userData");
+      userData.value = null;
+    }
+  });
+
+  // Initialize modals
+  // eslint-disable-next-line
+  clubModal = new bootstrap.Modal(document.getElementById("clubModal"));
+  // eslint-disable-next-line
+  editModal = new bootstrap.Modal(document.getElementById("editModal"));
+});
+
 
 function shuffle(array) {
   let currentIndex = array.length;
@@ -264,14 +293,6 @@ function refilterDataKeys(subjectSelections) {
 }
 
 const editing = ref(false);
-let clubModal, editModal;
-
-window.addEventListener("load",() => {
-  // eslint-disable-next-line
-  clubModal = new bootstrap.Modal(document.getElementById("clubModal"));
-  // eslint-disable-next-line
-  editModal = new bootstrap.Modal(document.getElementById("editModal"));
-});
 
 const newRegister = ref(false);
 function showModal(key) {
@@ -285,21 +306,28 @@ function openEditing() {
   editModal.show();
 }
 
-function closeEditing(openClubModal) {
+function closeEditing() {
   editModal.hide();
-  if (openClubModal) clubModal.show();
 }
 
-const userData = ref(null);
 async function signInPath() {
-  const data = await signIn();
-  userData.value = data;
-  localStorage.setItem("userData", JSON.stringify(data));
+  const userId = await signIn();
+  console.log(userId);
+  const dbData = await getUser(userId);
+  console.log(dbData);
+  userData.value = dbData;
+  localStorage.setItem("userData", JSON.stringify(dbData));
 }
-
 function signOut() {
-  localStorage.removeItem("userData");
-  location.reload();
+  firebaseSignOut(auth)
+    .then(() => {
+      // Successfully signed out, remove user data from local storage
+      localStorage.removeItem("userData");
+      location.reload(); // Reload the page after sign out
+    })
+    .catch((error) => {
+      console.error("Error signing out:", error); // Handle potential errors here
+    });
 }
 
 window.addEventListener("load", () => {
@@ -308,10 +336,7 @@ window.addEventListener("load", () => {
 
 function resetEmpty() {
   data.value[emptyID.value] = {
-    advisor: {
-      email: "",
-      name: ""
-    },
+    advisor: {},
     description: "",
     image: "",
     leader: {},
@@ -319,10 +344,6 @@ function resetEmpty() {
     name: "",
     sign_up: "",
     subject: ""
-  };
-  data.value[emptyID.value].leader[randomID()] = {
-    email: "",
-    name: ""
   };
 }
 

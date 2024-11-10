@@ -21,9 +21,14 @@
             </template>
           </p>
           <p>
-            <span>Faculty advisor:</span>
+            <span>
+              Faculty advisor{{ Object.keys(selectedItem.advisor).length != 1 ? "s" : "" }}:
+            </span>
             <i class="fa-solid fa-envelope" />
-            <a :href="`mailto:${selectedItem.advisor.email}`">{{ selectedItem.advisor.name }}</a>
+            <template v-for="(advisor,key,index) of selectedItem.advisor" :key="advisor">
+              <a :href="`mailto:${advisor.email}`">{{ advisor.name }}</a>
+              <template v-if="index < Object.keys(selectedItem.advisor).length - 1">, </template>
+            </template>
           </p>
           <p>
             Main subject: {{ selectedItem.subject }}
@@ -47,12 +52,11 @@ const props = defineProps(["selectedItem","userData"]);
 
 const imageURL = ref("");
 watch(() => props.selectedItem,async () => {
-  console.log(props.selectedItem)
   if ( props.selectedItem.image ) imageURL.value = await getImageURL(props.selectedItem.image);
 });
 
 function emailsMatch(emailA,emailB) {
-  return emailA.toLowerCase() == emailB.toLowerCase() || (emailA.charAt(0) + emailA.split("@")[0].split("_").slice(1).join("")).toLowerCase() == emailB.split("@")[0].slice(0,-2).toLowerCase();
+  return emailA.toLowerCase() == emailB.toLowerCase();
 }
 
 const canEdit = computed(() => {
@@ -60,7 +64,10 @@ const canEdit = computed(() => {
   for ( const leader of Object.values(props.selectedItem.leader) ) {
     if ( emailsMatch(leader.email,props.userData.email) ) return true;
   }
-  return props.selectedItem.advisor.email && emailsMatch(props.selectedItem.advisor.email,props.userData.email);
+  for ( const advisor of Object.values(props.selectedItem.advisor) ) {
+    if ( emailsMatch(advisor.email,props.userData.email) ) return true;
+  }
+  return false;
 });
 </script>
 

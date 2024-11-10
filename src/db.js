@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { query, ref, orderByChild, equalTo, onValue, getDatabase, set } from 'firebase/database';
+import { query, ref, get, orderByChild, equalTo, onValue, getDatabase, set } from 'firebase/database';
 import { getStorage,ref as sRef,getDownloadURL,uploadBytes } from 'firebase/storage';
 import { getAuth, GoogleAuthProvider, signInWithPopup, fetchSignInMethodsForEmail, linkWithCredential, EmailAuthProvider } from "firebase/auth";
 import { reactive } from 'vue';
@@ -25,8 +25,53 @@ function setupDB(callback) {
     callback(snapshot.val());
   });
 }
+
+async function findUserWithEmail(email) {
+  const db = getDatabase();
+  const usersRef = ref(db, "/users/public");
+  const emailQuery = query(usersRef, orderByChild("email"), equalTo(email));
+
+  try {
+    const snapshot = await get(emailQuery);
+    if (snapshot.exists()) {
+      const user = snapshot.val();
+      const userId = Object.keys(user)[0];
+      const userData = user[userId];
+
+      return { ...userData, uid: userId };
+    } else {
+      console.log(`User not found with email: ${email}`);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+}
+
+async function getUser(uid) {
+  const db = getDatabase();
+  const userRef = ref(db, `/users/public/${uid}`);
+
+  try {
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      const user = snapshot.val();
+
+      return { ...user, uid: uid };
+    } else {
+      console.log(`User not found with UID: ${uid}`);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user by UID:", error);
+    return null;
+  }
+}
+
 function writeEntry(key,entry) {
-  set(ref(db,`/clubs/directory/${key}`),entry);
+  console.log(entry);
+  set(ref(db,`/clubs/unpublished/${key}`),entry);
 }
 
 async function signIn() {
@@ -60,19 +105,17 @@ async function signIn() {
       }
     }
 
-    return {
-      full_name: result.user.displayName,
-      first_name: result.user.displayName.split(" ")[0],
-      email: result.user.email
-    };
+    return result.user.uid;
 
   } catch (error) {
     console.error("Sign-in error:", error);
   }
 }
 
+
 const imageURLCache = reactive({});
 async function getImageURL(image) {
+    if (image == null) return null
     const url = await getDownloadURL(sRef(storage, "/clubs/" + image));
     imageURLCache[image] = url;
     return url;
@@ -95,4 +138,4 @@ function randomID() {
   return result;
 }
 
-export { setupDB,writeEntry,signIn,getImageURL,uploadImage,randomID };
+export { setupDB, findUserWithEmail, getUser, writeEntry, signIn, getImageURL, uploadImage, randomID };
