@@ -17,17 +17,48 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-function setupDB(callback) {
-  const dataRef = ref(db, "/clubs/directory/");
-  const approvedQuery = query(dataRef, orderByChild("is_active"), equalTo(true));
+function fetchClubDirectory(callback) {
+  const clubsQuery = ref(db, "/clubs/directory/");
 
-  onValue(approvedQuery, snapshot => {
+  onValue(clubsQuery, snapshot => {
     callback(snapshot.val());
   });
 }
 
+function fetchUnpublishedClubs(callback) {
+  const dataRef = ref(db, "/clubs/unpublished/");
+  const clubsQuery = query(dataRef);
+
+  onValue(clubsQuery, snapshot => {
+    callback(snapshot.val());
+  });
+}
+
+async function userIsAdmin(userId) {
+  const dataRef = ref(db, `/clubs/admins/${userId}`);
+  const adminQuery = query(dataRef);
+
+  try {
+    const snapshot = await get(adminQuery);
+    if (snapshot.exists()) {
+      console.log(snapshot.val());
+      return snapshot.val();
+    } 
+    else {
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+}
+
+
+function submitClub(key,entry) {
+  console.log(entry);
+  set(ref(db,`/clubs/unpublished/${key}`),entry);
+}
+
 async function findUserWithEmail(email) {
-  const db = getDatabase();
   const usersRef = ref(db, "/users/public");
   const emailQuery = query(usersRef, orderByChild("email"), equalTo(email));
 
@@ -50,7 +81,6 @@ async function findUserWithEmail(email) {
 }
 
 async function getUser(uid) {
-  const db = getDatabase();
   const userRef = ref(db, `/users/public/${uid}`);
 
   try {
@@ -67,11 +97,6 @@ async function getUser(uid) {
     console.error("Error fetching user by UID:", error);
     return null;
   }
-}
-
-function writeEntry(key,entry) {
-  console.log(entry);
-  set(ref(db,`/clubs/unpublished/${key}`),entry);
 }
 
 async function signIn() {
@@ -112,7 +137,6 @@ async function signIn() {
   }
 }
 
-
 const imageURLCache = reactive({});
 async function getImageURL(image) {
     if (image == null) return null
@@ -138,4 +162,4 @@ function randomID() {
   return result;
 }
 
-export { setupDB, findUserWithEmail, getUser, writeEntry, signIn, getImageURL, uploadImage, randomID };
+export { signIn, userIsAdmin, fetchClubDirectory, fetchUnpublishedClubs, submitClub, findUserWithEmail, getUser, getImageURL, uploadImage, randomID };

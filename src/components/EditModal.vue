@@ -81,7 +81,7 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch } from "vue";
 import { SUBJECTS } from "../constants";
-import { writeEntry, getImageURL, uploadImage, findUserWithEmail } from "../db";
+import { submitClub, getImageURL, uploadImage, findUserWithEmail } from "../db";
 
 const props = defineProps(["selectedItem", "selectedKey", "newRegister"]);
 const emit = defineEmits(["closeEditing"]);
@@ -187,7 +187,7 @@ function saveChanges() {
       is_active: true,
     };
 
-    writeEntry(props.selectedKey, updatedItem);
+    submitClub(props.selectedKey, updatedItem);
     emit("closeEditing", true);
   } else {
     areErrors.value = true;
