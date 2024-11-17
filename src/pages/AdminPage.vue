@@ -35,14 +35,14 @@
           </div>
         </div>
 
-        <div class="mt-5">
+        <div v-if="Object.keys(publishedClubs).length != 0" class="mt-5">
           <h2>
             Published Clubs 
             ({{ activePublishedCount }} active, {{ inactivePublishedCount }} inactive)
           </h2>
           <div class="dynamic-grid">
             <div
-              v-for="[key, club] in Object.entries(publishedClubs)"
+              v-for="[key, club] in Object.entries(publishedClubs).filter(([key]) => key != emptyID)"
               :key="key"
               class="club-card"
             >
@@ -71,7 +71,7 @@
       <EditModal
         :selectedItem="publishedClubs[selectedKey] || { advisor: {}, leader: {} }"
         :selectedKey="selectedKey"
-        :newRegister="false"
+        :isNewClub="isNewClub"
         :isAdmin="true"
         @submitClub="submitClub"
         @markActive="markActive"
@@ -94,6 +94,7 @@ import {
   setClubActive,
   setClubInactive,
   adminWriteClub,
+  randomID,
 } from "../db";
 import ClubCard from "../components/ClubCard";
 import ClubModal from "../components/ClubModal";
@@ -109,12 +110,16 @@ const publishedClubs = ref({});
 const unpublishedClubs = ref({});
 const selectedKey = ref("");
 
+const isNewClub = ref(false);
+const emptyID = ref(randomID());
+
 let clubModal, editModal;
 
 const activePublishedCount = computed(() => {
-  return Object.values(publishedClubs.value).filter((club) => club.is_active).length;
+  return Object.entries(publishedClubs.value).filter(
+    ([key, club]) => club.is_active && key !== emptyID.value
+  ).length;
 });
-
 const inactivePublishedCount = computed(() => {
   return Object.values(publishedClubs.value).filter((club) => !club.is_active).length;
 });
@@ -140,6 +145,10 @@ onMounted(async () => {
     });
   } catch (error) {
     console.error("Error fetching data:", error);
+
+    if (error.message && error.message.includes("Permission denied")) {
+      window.location.href = "/home";
+    }
   } finally {
     loading.value = false;
   }
@@ -150,15 +159,16 @@ onMounted(async () => {
   editModal = new bootstrap.Modal(document.getElementById("editModal"));
 });
 
+
 function showModal(key, type) {
   selectedKey.value = key;
   if (type === 'approve') {
     clubModal.show(); 
   } else if (type === 'edit') {
-      editModal.show(); 
+    isNewClub.value = false;
+    editModal.show(); 
   }
 }
-
 
 function closeClubModal() {
   clubModal.hide();
@@ -229,10 +239,36 @@ async function submitClub(key, entry) {
     await adminWriteClub(key, entry);
     publishedClubs.value[key] = entry;
     closeEditModal();
+    if (isNewClub.value) {
+      emptyID.value = randomID();
+    }
   } catch (error) {
     console.error("Error submitting club:", error);
   }
 }
+
+// Registration handler
+function resetEmpty() {
+  publishedClubs.value[emptyID.value] = {
+    advisor: {},
+    description: "",
+    image: "",
+    leader: {},
+    meeting_room: "",
+    name: "",
+    sign_up: "",
+    subject: "",
+    is_active: true
+  };
+}
+
+function registerNew() {
+  resetEmpty();
+  selectedKey.value = emptyID.value;
+  isNewClub.value = true;
+  editModal.show()
+}
+
 </script>
 
 <style scoped>

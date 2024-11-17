@@ -3,7 +3,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-body">
-          <div v-if="newRegister">
+          <div v-if="isNewClub">
             <h5>Registering a new club/organization</h5>
             <p>
               Please only fill out this form when:
@@ -70,35 +70,41 @@
           </div>
 
           <!-- Admin functionality -->
-          <div v-if="isAdmin">
-            <div>
+          <div v-if="isAdmin  && !isNewClub">
               <p>Is active: {{ editableItem.is_active ? "Yes" : "No" }}</p>
-            </div>
-            <button
-              class="btn btn-primary"
-              @click="$emit('markActive', !editableItem.is_active, selectedKey, editableItem)"
-            >
-              {{ editableItem.is_active ? "Mark Inactive" : "Mark Active" }}
-            </button>
-            <button
-              class="btn btn-danger"
-              @click="$emit('deleteClub', selectedKey, editableItem)"
-            >
-              Delete Club
-            </button>
           </div>
+          <div class="button-row">
+            <!-- Publish/Submit changes and Exit buttons -->
+            <div class="left-buttons">
+              <button
+                class="btn"
+                :class="isEdited || isNewClub ? 'btn-success' : 'btn-secondary'"
+                :disabled="!isEdited && !isNewClub"
+                @click="saveChanges"
+              >
+                {{ isNewClub ? isAdmin ? "Publish new club" : "Submit new club for approval" : isAdmin ? "Publish edits" : "Submit edits for approval" }}
+              </button>
+              <button class="btn btn-secondary" @click="$emit('closeEditing')">
+                {{ isNewClub ? "Exit without publishing" : "Exit without saving" }}
+              </button>
+            </div>
 
-          <button
-            class="btn"
-            :class="isEdited || newRegister ? 'btn-success' : 'btn-secondary'"
-            :disabled="!isEdited && !newRegister"
-            @click="saveChanges"
-          >
-            {{ newRegister ? "Submit new club for approval" : isAdmin ? "Publish changes" : "Submit edits for approval" }}
-          </button>
-          <button class="btn btn-secondary" @click="$emit('closeEditing')">
-            {{ newRegister ? "Exit without publishing" : "Exit without saving" }}
-          </button>
+            <!-- Additional buttons for admins -->
+            <div v-if="isAdmin" class="right-buttons">
+              <button
+                class="btn btn-primary"
+                @click="$emit('markActive', !editableItem.is_active, selectedKey, editableItem)"
+              >
+                {{ editableItem.is_active ? "Mark Inactive" : "Mark Active" }}
+              </button>
+              <button
+                class="btn btn-danger"
+                @click="$emit('deleteClub', selectedKey, editableItem)"
+              >
+                Delete Club
+              </button>
+            </div>
+          </div>
           <p v-if="submissionError" class="error-message">{{ submissionError }}</p>
         </div>
       </div>
@@ -111,7 +117,7 @@ import { defineProps, defineEmits, ref, watch } from "vue";
 import { SUBJECTS } from "../constants";
 import { getImageURL, uploadImage, findUserWithEmail } from "../db";
 
-const props = defineProps(["selectedItem", "selectedKey", "newRegister", "isAdmin"]);
+const props = defineProps(["selectedItem", "selectedKey", "isNewClub", "isAdmin"]);
 const emit = defineEmits(["submitClub", "markActive", "deleteClub", "closeEditing"]);
 
 const editableItem = ref({ advisor: {}, leader: {} });
@@ -128,12 +134,21 @@ const isEdited = ref(false);
 
 watch(
   () => props.selectedItem,
-  () => {
+  async () => {
+    submissionError.value = "";
     if (props.selectedItem) {
       editableItem.value = { ...props.selectedItem };
-      originalItem.value = JSON.stringify(editableItem.value); // Save original state
+      originalItem.value = JSON.stringify(editableItem.value);
+
+      // Set imageURL if image exists
+      if (editableItem.value.image) {
+        imageURL.value = await getImageURL(editableItem.value.image);
+      } else {
+        imageURL.value = "";
+      }
     } else {
-      editableItem.value = { advisor: {}, leader: {} }; // Fallback to an empty object
+      editableItem.value = { advisor: {}, leader: {} };
+      imageURL.value = "";
     }
     checkForEdits();
   },
@@ -290,7 +305,7 @@ input[type="email"] {
 .error-message {
   color: red;
   font-size: 0.875rem;
-  margin-top: 0rem;
+  margin-top: 1rem;
 }
 .h5-input {
   font-size: 1.25rem;
@@ -298,7 +313,7 @@ input[type="email"] {
   line-height: 1.2;
   font-weight: bold;
 }
-.modal-body div:not(.form-check):not(.people-section):not(.people-box):not(.new-people-box) {
+.modal-body div:not(.form-check):not(.people-section):not(.people-box):not(.new-people-box):not(.button-row):not(.left-buttons):not(.right-buttons):not(.error-message) {
   margin-bottom: 1rem;
 }
 .form-select {
@@ -341,7 +356,17 @@ textarea {
   width: 100%;
   resize: none;
 }
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.left-buttons,
+.right-buttons {
+  display: flex;
+  gap: 0.5rem; /* Add spacing between buttons */
+}
 .btn {
-  margin-right: 1rem;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 </style>

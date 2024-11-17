@@ -7,7 +7,10 @@
         :alt="item.name"
       >
     </div>
-    <div class="card-body">
+    <div 
+      class="card-body"
+      :class="{ 'inactive-body': !item.is_active }"
+    >
       <h5 class="card-title" ref="titleRef">{{ item.name }}</h5>
       <p 
         class="description" 
@@ -58,13 +61,18 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .card-img-wrapper {
-  aspect-ratio: 3 / 2; /* Use CSS aspect-ratio for simplicity */
+  aspect-ratio: 3 / 2;
   overflow: hidden;
 }
 .card-img-top {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Ensures consistent image scaling */
+  object-fit: cover;
+}
+.card-body {
+  background-color: white; /* Default background for active cards */
+  padding: 1rem;
+  transition: background-color 0.2s ease-in-out;
 }
 .card-title {
   font-size: 1.1rem;
@@ -82,5 +90,8 @@ onMounted(() => {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
+}
+.inactive-body {
+  background-color: #e0e0e0;
 }
 </style>

@@ -62,7 +62,7 @@
       v-show="editing"
       :selectedItem="data[selectedKey] || { advisor: {}, leader: {} }"
       :selectedKey="selectedKey"
-      :newRegister="newRegister"
+      :isNewClub="isNewClub"
       @submitClub="submitClubForApproval"
     />
   </div>
@@ -154,7 +154,11 @@ let clubModal, editModal;
 // Reactive references
 const data = ref({});
 const selectedKey = ref("");
+
+// For new clubs
+const editing = ref(false);
 const emptyID = ref(randomID());
+const isNewClub = ref(false);
 
 // Set up the database and filter data
 async function loadClubs() {
@@ -176,13 +180,9 @@ function refilterDataKeys(subjectSelections) {
   filteredDataKeys.value = result;
 }
 
-// Editing states
-const editing = ref(false);
-const newRegister = ref(false);
-
 function showModal(key) {
   selectedKey.value = key;
-  newRegister.value = false;
+  isNewClub.value = false;
   if (clubModal) clubModal.show();
 }
 
@@ -198,6 +198,9 @@ function closeEditing() {
 function submitClubForApproval(key, entry) {
   submitClub(key, entry);
   closeEditing();
+  if (isNewClub.value) {
+    emptyID.value = randomID();
+  }
 }
 
 // Calculate `canEdit` for the selected item
@@ -252,7 +255,7 @@ function resetEmpty() {
 function registerNew() {
   resetEmpty();
   selectedKey.value = emptyID.value;
-  newRegister.value = true;
+  isNewClub.value = true;
   openEditing();
 }
 
