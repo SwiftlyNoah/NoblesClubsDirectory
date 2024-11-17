@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">
+      <a class="navbar-brand" href="#" @click.prevent="goToHome">
         <img src="@/assets/logo_white.png" />
         Clubs &amp; Organizations Directory
       </a>
@@ -50,7 +50,7 @@
                   </button>
                 </li>
                 <li v-if="userData.is_admin">
-                <button class="dropdown-item" @click="goToAdmin">Admin Portal</button>
+                  <button class="dropdown-item" @click="goToAdmin">Admin Portal</button>
                 </li>
                 <li>
                   <button class="dropdown-item" @click="signOut">Sign Out</button>
@@ -63,7 +63,6 @@
     </div>
   </nav>
 </template>
-
 
 <script setup>
 import { defineEmits, defineProps } from 'vue';
@@ -86,6 +85,10 @@ function signInPath() {
 
 function goToAdmin() {
   window.location.href = "/admin";
+}
+
+function goToHome() {
+  window.location.href = "/home";
 }
 
 function signOut() {

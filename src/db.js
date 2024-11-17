@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { query, ref, get, orderByChild, equalTo, onValue, getDatabase, set } from 'firebase/database';
-import { getStorage,ref as sRef,getDownloadURL,uploadBytes } from 'firebase/storage';
+import { query, ref, get, orderByChild, equalTo, getDatabase, set } from 'firebase/database';
+import { getStorage, ref as sRef, getDownloadURL, uploadBytes } from 'firebase/storage';
 import { getAuth, GoogleAuthProvider, signInWithPopup, fetchSignInMethodsForEmail, linkWithCredential, EmailAuthProvider } from "firebase/auth";
 import { reactive } from 'vue';
 
@@ -17,20 +17,45 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-function fetchClubDirectory(callback) {
-  const clubsQuery = ref(db, "/clubs/directory/");
-
-  onValue(clubsQuery, snapshot => {
-    callback(snapshot.val());
-  });
+// Helper function: Perform an operation for each leader
+function processLeaders(entry, operation) {
+  if (!entry.leader) return [];
+  return Object.entries(entry.leader).map(([leaderKey, leader]) => {
+    if (leaderKey) {
+      return operation(leaderKey, leader);
+    }
+    return null;
+  }).filter(Boolean); // Remove any null results
 }
 
-function fetchUnpublishedClubs(callback) {
+// Helper function: Perform an operation for each advisor
+function processAdvisors(entry, operation) {
+  if (!entry.advisor) return [];
+  return Object.entries(entry.advisor).map(([advisorKey, advisor]) => {
+    if (advisorKey) {
+      return operation(advisorKey, advisor);
+    }
+    return null;
+  }).filter(Boolean); // Remove any null results
+}
+
+// Fetch club directory data
+async function fetchClubDirectory() {
+  const dataRef = ref(db, "/clubs/directory/");
+  const clubsQuery = query(dataRef, orderByChild("name"));
+
+  return get(clubsQuery).then((snapshot) => snapshot.val());
+}
+
+// Fetch unpublished clubs data
+async function fetchUnpublishedClubs() {
   const dataRef = ref(db, "/clubs/unpublished/");
   const clubsQuery = query(dataRef);
 
-  onValue(clubsQuery, snapshot => {
-    callback(snapshot.val());
+  return get(clubsQuery).then((snapshot) => {
+    const clubs = snapshot.val();
+    console.log("Unpublished Clubs:", clubs);
+    return clubs;
   });
 }
 
@@ -40,22 +65,205 @@ async function userIsAdmin(userId) {
 
   try {
     const snapshot = await get(adminQuery);
-    if (snapshot.exists()) {
-      console.log(snapshot.val());
-      return snapshot.val();
-    } 
-    else {
-      return null;
-    }
+    return snapshot.exists() ? snapshot.val() : null;
   } catch (error) {
     return null;
   }
 }
 
-
-function submitClub(key,entry) {
+function submitClub(key, entry) {
   console.log(entry);
-  set(ref(db,`/clubs/unpublished/${key}`),entry);
+  set(ref(db, `/clubs/unpublished/${key}`), entry);
+}
+
+async function approveClub(key, entry) {
+  try {
+    const unpublishedRef = ref(db, `/clubs/unpublished/${key}`);
+    const directoryRef = ref(db, `/clubs/directory/${key}`);
+
+    // Remove the object from clubs/unpublished/key
+    const removeUnpublished = set(unpublishedRef, null);
+
+    // Create the new club in clubs/directory/key
+    const addToDirectory = set(directoryRef, entry);
+
+    // Process leaders and advisors
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey, leader) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+          approval_status: "approved",
+          ...(leader.role ? { role: leader.role } : {}),
+        });
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+          approval_status: "approved",
+        });
+      }),
+    ];
+
+    await Promise.all([removeUnpublished, addToDirectory, ...userUpdates]);
+    console.log(`Club "${entry.name}" approved and updates completed.`);
+  } catch (error) {
+    console.error("Error approving club:", error);
+  }
+}
+
+async function rejectClub(key, entry) {
+  try {
+    const unpublishedRef = ref(db, `/clubs/unpublished/${key}`);
+
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+    ];
+
+    const removeUnpublished = set(unpublishedRef, null);
+
+    await Promise.all([removeUnpublished, ...userUpdates]);
+    console.log(`Club "${entry.name}" rejected and removed from unpublished.`);
+  } catch (error) {
+    console.error("Error rejecting club:", error);
+  }
+}
+
+async function deleteClub(key, entry) {
+  try {
+    const unpublishedRef = ref(db, `/clubs/unpublished/${key}`);
+    const directoryRef = ref(db, `/clubs/directory/${key}`);
+
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+    ];
+
+    const removeUnpublished = set(unpublishedRef, null);
+    const removePublished = set(directoryRef, null);
+
+    await Promise.all([removeUnpublished, removePublished, ...userUpdates]);
+    console.log(`Club "${entry.name}" deleted from all lists.`);
+  } catch (error) {
+    console.error("Error deleting club:", error);
+  }
+}
+
+async function setClubActive(key, entry) {
+  try {
+    const directoryRef = ref(db, `/clubs/directory/${key}`);
+
+    // Update the club's is_active field in the published list
+    const updateIsActive = set(directoryRef, { ...entry, is_active: true });
+
+    // Add the club back to leaders' and advisors' lists
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey, leader) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+          approval_status: "active",
+          ...(leader.role ? { role: leader.role } : {}),
+        });
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+          approval_status: "active",
+        });
+      }),
+    ];
+
+    await Promise.all([updateIsActive, ...userUpdates]);
+    console.log(`Club "${entry.name}" marked as active and added back to leader and advisor lists.`);
+  } catch (error) {
+    console.error("Error marking club as active:", error);
+  }
+}
+
+async function setClubInactive(key, entry) {
+  try {
+    const directoryRef = ref(db, `/clubs/directory/${key}`);
+
+    const updateIsActive = set(directoryRef, { ...entry, is_active: false });
+
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, null);
+      }),
+    ];
+
+    await Promise.all([updateIsActive, ...userUpdates]);
+    console.log(`Club "${entry.name}" marked as inactive and removed from leader and advisor lists.`);
+  } catch (error) {
+    console.error("Error marking club as inactive:", error);
+  }
+}
+
+async function adminWriteClub(key, entry) {
+  try {
+    const directoryRef = ref(db, `/clubs/directory/${key}`);
+
+    // Write the club to the published list
+    const publishClub = set(directoryRef, entry);
+
+    // Process leaders and advisors
+    const userUpdates = [
+      ...processLeaders(entry, (leaderKey, leader) => {
+        const userClubRef = ref(db, `/users/public/${leaderKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+          ...(leader.role ? { role: leader.role } : {}),
+        });
+      }),
+      ...processAdvisors(entry, (advisorKey) => {
+        const userClubRef = ref(db, `/users/public/${advisorKey}/clubs/${key}`);
+        return set(userClubRef, {
+          image: entry.image,
+          name: entry.name,
+          subject: entry.subject,
+        });
+      }),
+    ];
+
+    // Execute all updates
+    await Promise.all([publishClub, ...userUpdates]);
+
+    console.log(`Club "${entry.name}" successfully written to the directory.`);
+  } catch (error) {
+    console.error("Error writing club to directory:", error);
+    throw error;
+  }
 }
 
 async function findUserWithEmail(email) {
@@ -67,9 +275,7 @@ async function findUserWithEmail(email) {
     if (snapshot.exists()) {
       const user = snapshot.val();
       const userId = Object.keys(user)[0];
-      const userData = user[userId];
-
-      return { ...userData, uid: userId };
+      return { ...user[userId], uid: userId };
     } else {
       console.log(`User not found with email: ${email}`);
       return null;
@@ -85,14 +291,7 @@ async function getUser(uid) {
 
   try {
     const snapshot = await get(userRef);
-    if (snapshot.exists()) {
-      const user = snapshot.val();
-
-      return { ...user, uid: uid };
-    } else {
-      console.log(`User not found with UID: ${uid}`);
-      return null;
-    }
+    return snapshot.exists() ? { ...snapshot.val(), uid } : null;
   } catch (error) {
     console.error("Error fetching user by UID:", error);
     return null;
@@ -104,34 +303,22 @@ async function signIn() {
   const auth = getAuth();
 
   try {
-    // Sign in with Google
     const result = await signInWithPopup(auth, provider);
-    
-    // Check if the email ends with "@nobles.edu"
+
     if (!result.user.email.endsWith("@nobles.edu")) return;
 
-    // Fetch existing sign-in methods for this email
     const existingMethods = await fetchSignInMethodsForEmail(auth, result.user.email);
 
-    // If there's an existing email/password account, link the Google account to it
     if (existingMethods.includes(EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD)) {
       const credential = GoogleAuthProvider.credentialFromResult(result);
-      
-      // Try linking and handle the "already linked" error gracefully
       try {
         await linkWithCredential(auth.currentUser, credential);
       } catch (linkError) {
-        if (linkError.code === "auth/provider-already-linked") {
-          // If already linked, proceed without linking
-          console.log("Provider already linked. Continuing without linking.");
-        } else {
-          throw linkError;
-        }
+        if (linkError.code !== "auth/provider-already-linked") throw linkError;
       }
     }
 
     return result.user.uid;
-
   } catch (error) {
     console.error("Sign-in error:", error);
   }
@@ -139,15 +326,15 @@ async function signIn() {
 
 const imageURLCache = reactive({});
 async function getImageURL(image) {
-    if (image == null) return null
-    const url = await getDownloadURL(sRef(storage, "/clubs/" + image));
-    imageURLCache[image] = url;
-    return url;
+  if (!image) return null;
+  const url = await getDownloadURL(sRef(storage, `/clubs/${image}`));
+  imageURLCache[image] = url;
+  return url;
 }
 
 async function uploadImage(file) {
   const imageName = randomID();
-  const imageRef = sRef(storage, "/clubs/" + imageName);
+  const imageRef = sRef(storage, `/clubs/${imageName}`);
   await uploadBytes(imageRef, file);
   imageURLCache[imageName] = await getDownloadURL(imageRef);
   return imageName;
@@ -155,11 +342,24 @@ async function uploadImage(file) {
 
 function randomID() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 20; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  return Array.from({ length: 20 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("");
 }
 
-export { signIn, userIsAdmin, fetchClubDirectory, fetchUnpublishedClubs, submitClub, findUserWithEmail, getUser, getImageURL, uploadImage, randomID };
+export {
+  signIn,
+  userIsAdmin,
+  fetchClubDirectory,
+  fetchUnpublishedClubs,
+  submitClub,
+  approveClub,
+  rejectClub,
+  deleteClub,
+  setClubActive,
+  setClubInactive,
+  adminWriteClub,
+  findUserWithEmail,
+  getUser,
+  getImageURL,
+  uploadImage,
+  randomID,
+};

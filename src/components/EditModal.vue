@@ -1,5 +1,4 @@
 <template>
-  <!-- eslint-disable vue/no-unused-vars -->
   <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -39,7 +38,7 @@
               <input type="text" placeholder="Role" v-model="newLeader.role" />
             </div>
             <button class="btn btn-success add-button" @click="addPerson('leader')">Add</button>
-        </div>
+          </div>
           <p v-if="leaderError" class="error-message">{{ leaderError }}</p>
           <div class="people-section">
             <p>Faculty advisor(s):</p>
@@ -69,9 +68,38 @@
             <p>Mission statement:</p>
             <textarea rows="5" v-model="editableItem.description"></textarea>
           </div>
-          <button class="btn btn-success" @click="saveChanges()">{{ newRegister ? "Submit new club for approval" : "Submit edits for approval" }}</button>
-          <button class="btn btn-secondary" @click="$emit('closeEditing')">{{ newRegister ? "Exit without publishing" : "Exit without saving" }}</button>
-          <p>{{ areErrors ? "You have not completed all above fields." : "" }}</p>
+
+          <!-- Admin functionality -->
+          <div v-if="isAdmin">
+            <div>
+              <p>Is active: {{ editableItem.is_active ? "Yes" : "No" }}</p>
+            </div>
+            <button
+              class="btn btn-primary"
+              @click="$emit('markActive', !editableItem.is_active, selectedKey, editableItem)"
+            >
+              {{ editableItem.is_active ? "Mark Inactive" : "Mark Active" }}
+            </button>
+            <button
+              class="btn btn-danger"
+              @click="$emit('deleteClub', selectedKey, editableItem)"
+            >
+              Delete Club
+            </button>
+          </div>
+
+          <button
+            class="btn"
+            :class="isEdited || newRegister ? 'btn-success' : 'btn-secondary'"
+            :disabled="!isEdited && !newRegister"
+            @click="saveChanges"
+          >
+            {{ newRegister ? "Submit new club for approval" : isAdmin ? "Publish changes" : "Submit edits for approval" }}
+          </button>
+          <button class="btn btn-secondary" @click="$emit('closeEditing')">
+            {{ newRegister ? "Exit without publishing" : "Exit without saving" }}
+          </button>
+          <p v-if="submissionError" class="error-message">{{ submissionError }}</p>
         </div>
       </div>
     </div>
@@ -81,35 +109,42 @@
 <script setup>
 import { defineProps, defineEmits, ref, watch } from "vue";
 import { SUBJECTS } from "../constants";
-import { submitClub, getImageURL, uploadImage, findUserWithEmail } from "../db";
+import { getImageURL, uploadImage, findUserWithEmail } from "../db";
 
-const props = defineProps(["selectedItem", "selectedKey", "newRegister"]);
-const emit = defineEmits(["closeEditing"]);
+const props = defineProps(["selectedItem", "selectedKey", "newRegister", "isAdmin"]);
+const emit = defineEmits(["submitClub", "markActive", "deleteClub", "closeEditing"]);
 
 const editableItem = ref({ advisor: {}, leader: {} });
 const imageURL = ref("");
 const newLeader = ref({ email: "", role: "" });
 const newAdvisor = ref("");
 
-watch(
-  () => editableItem.value,
-  async () => {
-    if (editableItem.value.image)
-      imageURL.value = await getImageURL(editableItem.value.image);
-    else imageURL.value = "";
-    areErrors.value = false;
-  }
-);
+const leaderError = ref("");
+const advisorError = ref("");
+const submissionError = ref("");
+
+const originalItem = ref("");
+const isEdited = ref(false);
 
 watch(
   () => props.selectedItem,
   () => {
-    editableItem.value = props.selectedItem;
-  }
+    if (props.selectedItem) {
+      editableItem.value = { ...props.selectedItem };
+      originalItem.value = JSON.stringify(editableItem.value); // Save original state
+    } else {
+      editableItem.value = { advisor: {}, leader: {} }; // Fallback to an empty object
+    }
+    checkForEdits();
+  },
+  { immediate: true } // Trigger on component load
 );
 
-const leaderError = ref("");
-const advisorError = ref("");
+function checkForEdits() {
+  isEdited.value = JSON.stringify(editableItem.value) !== originalItem.value;
+}
+
+watch(() => editableItem.value, checkForEdits, { deep: true });
 
 async function addPerson(type) {
   const isStudentLeader = type === "leader";
@@ -164,33 +199,22 @@ async function triggerImageUpload() {
 }
 
 function isFormValid() {
-  if (
-    editableItem.value.name == "" ||
-    editableItem.value.subject == "" ||
-    editableItem.value.sign_up == "" ||
-    editableItem.value.description == "" ||
-    editableItem.value.image == "" ||
-    Object.keys(editableItem.value.leader).length == 0
-  )
-    return false;
-  for (const leader of Object.values(editableItem.value.leader)) {
-    if (leader.email == "" || leader.role == "") return false;
-  }
-  return true;
+  const errors = [];
+  if (!editableItem.value.name) errors.push("Club/org name is required.");
+  if (!editableItem.value.subject) errors.push("Main subject is required.");
+  if (!editableItem.value.sign_up) errors.push("Sign-up info is required.");
+  if (!editableItem.value.description) errors.push("Mission statement is required.");
+  if (!editableItem.value.image) errors.push("Club banner is required.");
+  if (!Object.keys(editableItem.value.leader).length) errors.push("At least one leader is required.");
+  if (!Object.keys(editableItem.value.advisor).length) errors.push("At least one advisor is required.");
+
+  submissionError.value = errors.join(" ");
+  return errors.length === 0;
 }
 
-const areErrors = ref(false);
 function saveChanges() {
   if (isFormValid()) {
-    const updatedItem = {
-      ...editableItem.value,
-      is_active: true,
-    };
-
-    submitClub(props.selectedKey, updatedItem);
-    emit("closeEditing", true);
-  } else {
-    areErrors.value = true;
+    emit("submitClub", props.selectedKey, editableItem.value);
   }
 }
 </script>

@@ -54,7 +54,8 @@
     <ClubModal
       v-show="!editing"
       :selectedItem="data[selectedKey] || { advisor: {}, leader: {} }"
-      :userData="userData"
+      :canEdit="canEdit"
+      :isAdmin="false"
       @openEditing="openEditing"
     />
     <EditModal
@@ -62,7 +63,7 @@
       :selectedItem="data[selectedKey] || { advisor: {}, leader: {} }"
       :selectedKey="selectedKey"
       :newRegister="newRegister"
-      @closeEditing="closeEditing"
+      @submitClub="submitClubForApproval"
     />
   </div>
 </template>
@@ -71,11 +72,6 @@
 body {
   overflow-x: hidden;
 }
-
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-}
-
 .fa-solid {
   padding-right: 0.25rem;
 }
@@ -139,42 +135,21 @@ video {
   margin-top: 2rem;
 }
 </style>
-
 <script setup>
-import { ref } from "vue";
-import {signIn, userIsAdmin, fetchClubDirectory, randomID, getUser } from "../db";
+import { useAuth } from "../composables/useAuth";
+import { ref, computed } from "vue";
 import { SUBJECTS } from "../constants";
 import ClubCard from "../components/ClubCard";
 import ClubModal from "../components/ClubModal";
 import EditModal from "../components/EditModal";
 import FilterBoxes from "../components/FilterBoxes";
 import TopBar from "../components/TopBar.vue";
-import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { signIn, userIsAdmin, fetchClubDirectory, randomID, getUser, submitClub } from "../db";
+
+const { userData } = useAuth(); // Use the composable
 
 // Modal references
 let clubModal, editModal;
-
-const auth = getAuth();
-const userData = ref(null);
-
-onAuthStateChanged(auth, async (firebase_user) => {
-  if (firebase_user) {
-    const storedUser = JSON.parse(localStorage.getItem("userData"));
-
-    // Check if the uid is different before fetching new data
-    if (!storedUser || storedUser.uid !== firebase_user.uid) {
-      const user = await getUser(firebase_user.uid);
-      userData.value = user;
-      localStorage.setItem("userData", JSON.stringify(user));
-    } else {
-      // If the same user, directly use storedUser
-      userData.value = storedUser;
-    }
-  } else {
-    localStorage.removeItem("userData");
-    userData.value = null;
-  }
-});
 
 // Reactive references
 const data = ref({});
@@ -182,10 +157,15 @@ const selectedKey = ref("");
 const emptyID = ref(randomID());
 
 // Set up the database and filter data
-fetchClubDirectory((dataReturned) => {
-  data.value = dataReturned; // dataReturned is an object
-  refilterDataKeys(SUBJECTS);
-});
+async function loadClubs() {
+  try {
+    const directoryData = await fetchClubDirectory();
+    data.value = directoryData || {}; // Ensure `data.value` is always an object
+    refilterDataKeys(SUBJECTS);
+  } catch (error) {
+    console.error("Error fetching club directory:", error);
+  }
+}
 
 const filteredDataKeys = ref([]);
 
@@ -195,7 +175,6 @@ function refilterDataKeys(subjectSelections) {
   );
   filteredDataKeys.value = result;
 }
-
 
 // Editing states
 const editing = ref(false);
@@ -215,6 +194,32 @@ function openEditing() {
 function closeEditing() {
   if (editModal) editModal.hide();
 }
+
+function submitClubForApproval(key, entry) {
+  submitClub(key, entry);
+  closeEditing();
+}
+
+// Calculate `canEdit` for the selected item
+const canEdit = computed(() => {
+  if (!userData.value) return false;
+
+  const selectedItem = data.value[selectedKey.value] || { advisor: {}, leader: {} };
+  const leaders = selectedItem.leader || {};
+  const advisors = selectedItem.advisor || {};
+
+  const emailsMatch = (emailA, emailB) => emailA.toLowerCase() === emailB.toLowerCase();
+
+  for (const leader of Object.values(leaders)) {
+    if (emailsMatch(leader.email, userData.value.email)) return true;
+  }
+
+  for (const advisor of Object.values(advisors)) {
+    if (emailsMatch(advisor.email, userData.value.email)) return true;
+  }
+
+  return false;
+});
 
 // Authentication actions
 async function signInPath() {
@@ -240,6 +245,7 @@ function resetEmpty() {
     name: "",
     sign_up: "",
     subject: "",
+    is_active: true
   };
 }
 
@@ -250,15 +256,14 @@ function registerNew() {
   openEditing();
 }
 
-// On page load, load modals and user data
+loadClubs();
+
+// On page load, load modals
 window.addEventListener("load", () => {
-  if (localStorage.getItem("userData")) {
-    userData.value = JSON.parse(localStorage.getItem("userData"));
-  }
-  // Initialize Bootstrap modals
   // eslint-disable-next-line
   clubModal = new bootstrap.Modal(document.getElementById("clubModal"));
   // eslint-disable-next-line
   editModal = new bootstrap.Modal(document.getElementById("editModal"));
 });
 </script>
+
