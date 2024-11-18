@@ -39,12 +39,30 @@ function processAdvisors(entry, operation) {
   }).filter(Boolean); // Remove any null results
 }
 
-// Fetch club directory data
-async function fetchClubDirectory() {
+async function fetchClubDirectory(isAdmin) {
   const dataRef = ref(db, "/clubs/directory/");
-  const clubsQuery = query(dataRef, orderByChild("name"));
 
-  return get(clubsQuery).then((snapshot) => snapshot.val());
+  const clubsQuery = isAdmin
+    ? query(dataRef) // Admin gets all clubs
+    : query(dataRef, orderByChild("is_active"), equalTo(true)); // Non-admin gets active clubs only
+
+  try {
+    const snapshot = await get(clubsQuery);
+    const clubs = snapshot.val() || {};
+
+    // Sort the clubs by name in ascending order
+    const sortedClubs = Object.entries(clubs)
+      .sort(([, clubA], [, clubB]) => clubA.name.localeCompare(clubB.name))
+      .reduce((result, [key, value]) => {
+        result[key] = value;
+        return result;
+      }, {});
+
+    return sortedClubs;
+  } catch (error) {
+    console.error("Error fetching club directory:", error);
+    throw error;
+  }
 }
 
 // Fetch unpublished clubs data

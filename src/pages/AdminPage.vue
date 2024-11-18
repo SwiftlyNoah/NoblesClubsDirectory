@@ -127,7 +127,7 @@ const inactivePublishedCount = computed(() => {
 onMounted(async () => {
   try {
     const [directory, unpublished] = await Promise.all([
-      fetchClubDirectory(),
+      fetchClubDirectory(true),
       fetchUnpublishedClubs(),
     ]);
 

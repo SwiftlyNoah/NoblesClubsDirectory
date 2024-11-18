@@ -163,7 +163,7 @@ const isNewClub = ref(false);
 // Set up the database and filter data
 async function loadClubs() {
   try {
-    const directoryData = await fetchClubDirectory();
+    const directoryData = await fetchClubDirectory(false);
     data.value = directoryData || {}; // Ensure `data.value` is always an object
     refilterDataKeys(SUBJECTS);
   } catch (error) {
