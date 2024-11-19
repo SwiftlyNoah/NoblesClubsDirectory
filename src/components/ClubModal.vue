@@ -38,7 +38,7 @@
           </p>
           <p class="description" v-if="selectedItem.description">Mission statement: {{ selectedItem.description }}</p>
           <div class="button-group">
-            <button v-if="canEdit" class="btn btn-primary" @click="$emit('openEditing')">Edit listing</button>
+            <button v-if="isLeader" class="btn btn-primary" @click="$emit('openEditing')">Edit listing</button>
             <div v-if="isAdmin" class="admin-buttons">
               <button class="btn btn-success me-2" @click="$emit('approveClub')">Approve</button>
               <button class="btn btn-danger" @click="$emit('rejectClub')">Reject</button>
@@ -55,7 +55,7 @@
 import { defineProps,ref,watch } from 'vue';
 import { getImageURL } from '../db';
 
-const props = defineProps(["selectedItem", "canEdit", "isAdmin"]);
+const props = defineProps(["selectedItem", "isLeader", "isAdmin"]);
 
 const imageURL = ref("");
 watch(() => props.selectedItem,async () => {

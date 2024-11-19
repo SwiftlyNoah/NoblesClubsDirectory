@@ -3,7 +3,6 @@
     <TopBar
       :userData="userData"
       @register-new="registerNew"
-      @sign-in="signInPath"
     />
     <div class="container-fluid px-4">
       <div v-if="loading" class="text-center my-4">
@@ -275,12 +274,10 @@ function registerNew() {
 .container-fluid {
   margin-top: 20px;
 }
-
 h2 {
   margin-bottom: 20px;
   font-size: 1.5rem;
 }
-
 /* Horizontal scrolling container for New and Edited Clubs */
 .horizontal-scroll {
   display: flex;
@@ -289,20 +286,16 @@ h2 {
   padding-bottom: 1rem;
   scrollbar-width: thin; /* Customize scrollbar for Firefox */
 }
-
 .horizontal-scroll::-webkit-scrollbar {
   height: 8px; /* Customize scrollbar height for Webkit browsers */
 }
-
 .horizontal-scroll::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 4px;
 }
-
 .horizontal-scroll::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
-
 /* Dynamic grid for Published Clubs */
 .dynamic-grid {
   display: grid;
@@ -310,7 +303,6 @@ h2 {
   gap: 1rem; /* Space between cards */
   justify-content: center; /* Center the grid in the container */
 }
-
 /* Fixed card width for consistent appearance */
 .club-card {
   width: 250px;

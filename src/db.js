@@ -316,6 +316,18 @@ async function getUser(uid) {
   }
 }
 
+async function fetchMyClubs(uid) {
+  const myClubsRef = ref(db, `/users/public/${uid}/clubs`);
+
+  try {
+    const snapshot = await get(myClubsRef);
+    return snapshot.exists() ? snapshot.val() : null;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
 async function signIn() {
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
@@ -375,6 +387,7 @@ export {
   setClubActive,
   setClubInactive,
   adminWriteClub,
+  fetchMyClubs,
   findUserWithEmail,
   getUser,
   getImageURL,

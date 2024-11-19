@@ -54,15 +54,14 @@
     <ClubModal
       v-show="!editing"
       :selectedItem="data[selectedKey] || { advisor: {}, leader: {} }"
-      :canEdit="canEdit"
+      :isLeader="false"
       :isAdmin="false"
-      @openEditing="openEditing"
     />
     <EditModal
       v-show="editing"
       :selectedItem="data[selectedKey] || { advisor: {}, leader: {} }"
       :selectedKey="selectedKey"
-      :isNewClub="isNewClub"
+      :isNewClub="true"
       @submitClub="submitClubForApproval"
     />
   </div>
@@ -75,34 +74,28 @@ body {
 .fa-solid {
   padding-right: 0.25rem;
 }
-
 .filters {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
-
 .filters-menu {
   margin-bottom: 1rem;
 }
-
 .results-count {
   margin-top: 0.5rem;
   margin-bottom: 0;
   font-style: italic;
 }
-
 .video-container {
   position: relative;
   height: 60vh;
   overflow: hidden;
 }
-
 video {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .video-filter {
   position: absolute;
   top: 0;
@@ -114,7 +107,6 @@ video {
   align-items: center;
   justify-content: center;
 }
-
 .title {
   color: white;
   font-size: clamp(2rem, 5vw, 3rem);
@@ -128,16 +120,16 @@ video {
   top: 50%; /* Centering vertically */
   transform: translateY(-50%); /* Adjusting vertical alignment */
 }
-
 .no-results {
   display: block;
   text-align: center;
   margin-top: 2rem;
 }
 </style>
+
 <script setup>
 import { useAuth } from "../composables/useAuth";
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { SUBJECTS } from "../constants";
 import ClubCard from "../components/ClubCard";
 import ClubModal from "../components/ClubModal";
@@ -158,7 +150,6 @@ const selectedKey = ref("");
 // For new clubs
 const editing = ref(false);
 const emptyID = ref(randomID());
-const isNewClub = ref(false);
 
 // Set up the database and filter data
 async function loadClubs() {
@@ -182,7 +173,6 @@ function refilterDataKeys(subjectSelections) {
 
 function showModal(key) {
   selectedKey.value = key;
-  isNewClub.value = false;
   if (clubModal) clubModal.show();
 }
 
@@ -198,31 +188,8 @@ function closeEditing() {
 function submitClubForApproval(key, entry) {
   submitClub(key, entry);
   closeEditing();
-  if (isNewClub.value) {
-    emptyID.value = randomID();
-  }
+  emptyID.value = randomID();
 }
-
-// Calculate `canEdit` for the selected item
-const canEdit = computed(() => {
-  if (!userData.value) return false;
-
-  const selectedItem = data.value[selectedKey.value] || { advisor: {}, leader: {} };
-  const leaders = selectedItem.leader || {};
-  const advisors = selectedItem.advisor || {};
-
-  const emailsMatch = (emailA, emailB) => emailA.toLowerCase() === emailB.toLowerCase();
-
-  for (const leader of Object.values(leaders)) {
-    if (emailsMatch(leader.email, userData.value.email)) return true;
-  }
-
-  for (const advisor of Object.values(advisors)) {
-    if (emailsMatch(advisor.email, userData.value.email)) return true;
-  }
-
-  return false;
-});
 
 // Authentication actions
 async function signInPath() {
@@ -255,7 +222,6 @@ function resetEmpty() {
 function registerNew() {
   resetEmpty();
   selectedKey.value = emptyID.value;
-  isNewClub.value = true;
   openEditing();
 }
 

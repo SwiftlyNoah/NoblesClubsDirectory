@@ -44,13 +44,14 @@
                 class="dropdown-menu dropdown-menu-end"
                 aria-labelledby="userDropdown"
               >
+                <li v-if="userData.is_admin">
+                  <button class="dropdown-item" @click="goToAdmin">Admin Portal</button>
+                </li>
+                <button class="dropdown-item" @click="goToMyClubs">My Clubs</button>
                 <li>
                   <button class="dropdown-item" @click="emit('register-new')">
                     Register a Club/Org
                   </button>
-                </li>
-                <li v-if="userData.is_admin">
-                  <button class="dropdown-item" @click="goToAdmin">Admin Portal</button>
                 </li>
                 <li>
                   <button class="dropdown-item" @click="signOut">Sign Out</button>
@@ -85,6 +86,10 @@ function signInPath() {
 
 function goToAdmin() {
   window.location.href = "/admin";
+}
+
+function goToMyClubs() {
+  window.location.href = "/my-clubs";
 }
 
 function goToHome() {
