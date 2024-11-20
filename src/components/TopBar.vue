@@ -65,11 +65,42 @@
   </nav>
 </template>
 
+<script>
+import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
+const auth = getAuth();
+
+export default {
+  methods: {
+    goToHome() {
+      this.$router.push('/home');
+    },
+    goToAdmin() {
+      this.$router.push('/admin');
+    },
+    goToMyClubs() {
+      this.$router.push('/my-clubs');
+    },
+    signOut() {
+      firebaseSignOut(auth)
+        .then(() => {
+          // Clear local storage
+          localStorage.removeItem("userData");
+
+          // Navigate to the home route
+          this.$router.push('/home');
+        })
+        .catch((error) => {
+          console.error("Error signing out:", error);
+          alert("An error occurred while signing out. Please try again.");
+        });
+    }, 
+  },
+};
+</script>
+
+
 <script setup>
 import { defineEmits, defineProps } from 'vue';
-import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
-
-const auth = getAuth();
 
 defineProps({
   userData: {
@@ -84,28 +115,6 @@ function signInPath() {
   emit("sign-in");
 }
 
-function goToAdmin() {
-  window.location.href = "/admin";
-}
-
-function goToMyClubs() {
-  window.location.href = "/my-clubs";
-}
-
-function goToHome() {
-  window.location.href = "/home";
-}
-
-function signOut() {
-  firebaseSignOut(auth)
-    .then(() => {
-      localStorage.removeItem("userData");
-      location.reload();
-    })
-    .catch((error) => {
-      console.error("Error signing out:", error);
-    });
-}
 </script>
 
 <style scoped>

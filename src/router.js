@@ -4,13 +4,14 @@ import AdminPage from './pages/AdminPage.vue';
 import MyClubsPage from './pages/MyClubsPage.vue'
 
 const routes = [
+  { path: '/', redirect: '/home' }, // Redirect '/' to '/home'
   { path: '/home', component: HomePage },
   { path: '/admin', component: AdminPage },
   { path: '/my-clubs', component: MyClubsPage }
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/clubs'),
   routes,
 });
 
