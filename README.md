@@ -1,4 +1,4 @@
-# Nobles club directory
+# Noble and Greenough School Clubs Directory
 This project was based off of the site orignally created by Simon Juknelis '24. It adds the funcationality of club creation/deletion, club leader sign in, administrator access, a fresh redesign, and more.
 Live at [https://nobilis.nobles.edu/clubs](https://nobilis.nobles.edu/clubs)
 
