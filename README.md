@@ -4,5 +4,6 @@ Live at [https://nobilis.nobles.edu/clubs](https://nobilis.nobles.edu/clubs)
 
 <div align="center">
   <img src="screenshots/cover.png" width="600" /><br />
-  <img src="screenshots/cards.png" width="600" />
+  <img src="screenshots/cards.png" width="600" /><br />
+  <img src="screenshots/admin.png" width="600" />
 </div>
