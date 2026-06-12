@@ -1,17 +1,22 @@
 rules_version = '2';
 
-// IMPORTANT: Before deploying, diff against the live rules in the Firebase
-// console (Storage > Rules). Deploying replaces ALL storage rules for the
-// bucket; any non-clubs paths in the live rules must be merged in here first.
+// Replaces the previous allow-all rules. Reads stay public everywhere
+// (identical to the old behavior, so nothing breaks); writes — previously
+// open to anyone unauthenticated — are now limited to signed-in users
+// uploading club images.
 service firebase.storage {
   match /b/{bucket}/o {
-    // Club images. Publicly readable (club directory is public); writes
-    // require a signed-in user and a reasonably sized image.
     match /clubs/{image} {
       allow read: if true;
       allow write: if request.auth != null
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+    }
+
+    // Preserve public read for any other existing files; no writes.
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

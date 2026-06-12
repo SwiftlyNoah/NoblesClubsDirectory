@@ -35,7 +35,7 @@ VITE_USE_EMULATOR=1 npm run dev   # against the local emulator suite
 firebase emulators:start --only database,auth,storage
 npm run build                     # typecheck + production build to dist/
 npm run lint
-npm run test:rules                # security-rules tests (needs JDK 21+ for firebase-tools)
+npm run test:rules                # security-rules tests (needs JDK 21+: brew install openjdk@21)
 ```
 
 ## Architecture
