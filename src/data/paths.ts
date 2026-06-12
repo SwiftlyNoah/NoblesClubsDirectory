@@ -1,0 +1,21 @@
+export const PATHS = {
+  directory: '/clubs/directory',
+  unpublished: '/clubs/unpublished',
+  admins: '/clubs/admins',
+  members: '/clubs/members',
+  joinRequests: '/clubs/join_requests',
+  events: '/events',
+  usersPublic: '/users/public',
+
+  club: (clubId: string) => `/clubs/directory/${clubId}`,
+  unpublishedClub: (clubId: string) => `/clubs/unpublished/${clubId}`,
+  admin: (uid: string) => `/clubs/admins/${uid}`,
+  clubMembers: (clubId: string) => `/clubs/members/${clubId}`,
+  clubMember: (clubId: string, uid: string) => `/clubs/members/${clubId}/${uid}`,
+  clubJoinRequests: (clubId: string) => `/clubs/join_requests/${clubId}`,
+  clubJoinRequest: (clubId: string, uid: string) => `/clubs/join_requests/${clubId}/${uid}`,
+  event: (eventId: string) => `/events/${eventId}`,
+  user: (uid: string) => `/users/public/${uid}`,
+  userClubs: (uid: string) => `/users/public/${uid}/clubs`,
+  userClub: (uid: string, clubId: string) => `/users/public/${uid}/clubs/${clubId}`,
+} as const;

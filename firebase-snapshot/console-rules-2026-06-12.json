@@ -1,0 +1,68 @@
+{
+  "rules": {
+    "clubs": {
+      "admins": {
+        ".read": "auth != null && root.child('clubs/admins').hasChild(auth.uid)",
+        ".write": "auth != null && root.child('clubs/admins').hasChild(auth.uid)"
+      },
+      "directory": {
+        ".indexOn": ["name", "is_active"],
+        ".read": true,
+        ".write": "auth != null && root.child('clubs/admins').hasChild(auth.uid)"
+      },
+      "unpublished": {
+  			".read": "auth != null",
+  			"$clubID": {
+    			".write": "(root.child('clubs/admins').hasChild(auth.uid)) || ((data.exists() && (data.child('leader').hasChild(auth.uid) || data.child('advisor').hasChild(auth.uid))) || (!data.exists() && (newData.child('leader').hasChild(auth.uid) || newData.child('advisor').hasChild(auth.uid))))"
+  			}
+			}
+    },
+    "global": {
+      ".read": true,
+      ".write": true
+    },
+    "last_updated": {
+      ".read": true,
+      ".write": false
+    },
+		"leaderboards": {
+      "$leaderboard": {
+        ".read": true,
+        ".indexOn": "s",
+        "$uid": {
+          ".write": "$uid === auth.uid && (!data.exists() || newData.child('s').val() >= data.child('s').val())"
+        }
+      }
+    },
+    "metadata": {
+      ".read": true,
+      ".write": false
+    },
+    "tag_game": {
+      	".read": true,
+      	".write": true
+    },
+    "users": {
+      "public": {
+        ".read": true,
+        ".indexOn": ["email"],
+        "$uid": {
+          "clubs": {
+          ".write": "$uid === auth.uid || root.child('clubs/admins').hasChild(auth.uid)"
+          }
+        }
+      },
+      "private": {
+      	"$uid": {
+          ".read": "$uid === auth.uid",
+            "kiosks": {
+              ".write": "$uid === auth.uid"
+            },
+          "is_club_admin": {
+            ".write": false
+          }
+       	}
+      }
+    }
+  }
+}

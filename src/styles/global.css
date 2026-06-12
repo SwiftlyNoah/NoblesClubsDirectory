@@ -1,0 +1,256 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-content);
+  font-size: 16px;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--fg);
+  margin: 0;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: var(--fg);
+}
+
+/* ---- Shared recipes from the design guide ---- */
+
+.section-header {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.card-soft {
+  background: var(--card-soft-bg);
+  border-radius: var(--radius-card);
+}
+
+.card-accent {
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  border-left: 4px solid var(--fg);
+  box-shadow: var(--card-shadow);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  padding: 12px 20px;
+  border-radius: var(--radius-feature);
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-primary:not(:disabled):active {
+  opacity: 0.8;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1.5px solid var(--fg);
+  color: var(--fg);
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  transition: background var(--t-fast) var(--ease-out);
+}
+
+.btn-outline:hover {
+  background: var(--fg-05);
+}
+
+.btn-destructive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--destructive-bg);
+  color: var(--destructive);
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+}
+
+.btn-link {
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--link);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  font-size: 40px;
+  opacity: 0.3;
+  color: var(--semi);
+}
+
+.empty-state .empty-message {
+  font-family: var(--font-content);
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+.text-field {
+  height: 38px;
+  border: 1.5px solid var(--fg);
+  border-radius: var(--radius-pill);
+  padding: 0 10px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--fg);
+  background: var(--bg);
+  outline: none;
+  width: 100%;
+}
+
+.text-field::placeholder,
+.text-area::placeholder {
+  color: var(--fg-50);
+}
+
+.text-area {
+  border: 1.5px solid var(--fg);
+  border-radius: 10px;
+  min-height: 90px;
+  padding: 8px 10px;
+  font-family: var(--font-content);
+  font-size: 15px;
+  width: 100%;
+  resize: vertical;
+  outline: none;
+}
+
+.select-field {
+  height: 38px;
+  border: 1.5px solid var(--fg);
+  border-radius: var(--radius-pill);
+  padding: 0 10px;
+  background: var(--bg);
+  width: 100%;
+  outline: none;
+}
+
+.form-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Filter chips (AnimatedChip equivalent) */
+.chip {
+  border: 1.5px solid var(--fg);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fg);
+  background: transparent;
+  transition:
+    background var(--t-select) var(--ease-out),
+    color var(--t-select) var(--ease-out);
+}
+
+.chip.selected {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* Staggered list entrance (FadeInRow equivalent) */
+@keyframes fade-in-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-row {
+  animation: fade-in-rise 300ms var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-row {
+    animation: none;
+  }
+}

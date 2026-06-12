@@ -1,0 +1,88 @@
+.club-detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.club-detail-image {
+  width: 45%;
+  float: right;
+  margin: 0 0 12px 16px;
+  border-radius: var(--radius-card);
+}
+
+.club-detail-description {
+  font-family: var(--font-content);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg);
+  margin: 12px 0;
+}
+
+.club-detail-inactive {
+  font-family: var(--font-content);
+  font-weight: 700;
+  color: var(--negative);
+  margin: 10px 0 0;
+}
+
+.club-detail-facts {
+  margin: 12px 0;
+}
+
+.club-detail-facts dt {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 10px;
+}
+
+.club-detail-facts dd {
+  font-family: var(--font-content);
+  font-size: 14px;
+  margin: 2px 0 0;
+  color: var(--semi);
+}
+
+.club-detail-events {
+  clear: both;
+  margin: 16px 0;
+}
+
+.club-detail-events ul {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.club-detail-event-title {
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.club-detail-event-date {
+  font-family: var(--font-content);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.club-detail-footer {
+  clear: both;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .club-detail-image {
+    width: 100%;
+    float: none;
+    margin: 0 0 12px;
+  }
+}

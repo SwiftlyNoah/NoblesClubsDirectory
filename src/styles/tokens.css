@@ -1,0 +1,43 @@
+/*
+ * Design tokens translated from the Nobles app design guide
+ * (react/docs/DESIGN_GUIDE.md). The app's theme system maps to fixed CSS
+ * custom properties here; the website ships the default Nobles theme only.
+ */
+:root {
+  /* Theme */
+  --fg: rgb(25, 61, 119); /* Nobles navy — headers, primary buttons, emphasized text */
+  --bg: #ffffff;
+  --semi: rgb(90, 108, 140); /* softer foreground — secondary labels, empty-state icons */
+  --muted: #888888;
+  --fg-05: rgba(25, 61, 119, 0.05);
+  --fg-10: rgba(25, 61, 119, 0.1);
+  --fg-50: rgba(25, 61, 119, 0.5);
+
+  /* Fixed semantic colors (theme-independent, from the design guide) */
+  --positive: #22c55e;
+  --negative: #ef4444;
+  --destructive: #dd4444;
+  --destructive-bg: rgba(221, 68, 68, 0.08);
+  --link: #2563eb;
+
+  /* Surfaces */
+  --card-soft-bg: rgba(128, 128, 128, 0.06);
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --modal-backdrop: rgba(0, 0, 0, 0.45);
+
+  /* Radii */
+  --radius-badge: 8px;
+  --radius-pill: 12px;
+  --radius-card: 12px;
+  --radius-feature: 14px;
+  --radius-modal: 18px;
+
+  /* Typography */
+  --font-display: 'EB Garamond', Garamond, serif; /* titles, section headers, buttons */
+  --font-content: 'Nunito', system-ui, -apple-system, sans-serif; /* card content */
+
+  /* Motion */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --t-fast: 250ms;
+  --t-select: 300ms;
+}

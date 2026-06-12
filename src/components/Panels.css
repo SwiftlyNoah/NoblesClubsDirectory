@@ -1,0 +1,44 @@
+.panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--card-soft-bg);
+  border-radius: var(--radius-card);
+  padding: 10px 14px;
+}
+
+.panel-row-name {
+  font-family: var(--font-content);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.panel-row-sub {
+  font-family: var(--font-content);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.panel-row-message {
+  font-family: var(--font-content);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--semi);
+  margin-top: 4px;
+}
+
+.panel-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

@@ -1,0 +1,222 @@
+.calendar-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.calendar-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.calendar-page-title {
+  font-size: 32px;
+}
+
+/* ---- Filters row ---- */
+
+.calendar-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.calendar-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendar-club-select {
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* ---- FullCalendar theme overrides (v6 injects its own base CSS) ---- */
+
+.calendar-page .fc {
+  font-family: var(--font-content);
+}
+
+.calendar-page .fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  color: var(--fg);
+}
+
+.calendar-page .fc .fc-button {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.calendar-page .fc .fc-button-primary {
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+.calendar-page .fc .fc-button-primary:disabled {
+  background: var(--fg);
+  border-color: var(--fg);
+  opacity: 0.5;
+}
+
+.calendar-page .fc .fc-button-primary:not(:disabled):hover {
+  background: var(--fg);
+  border-color: var(--fg);
+  opacity: 0.85;
+}
+
+.calendar-page .fc .fc-button-primary:not(:disabled).fc-button-active,
+.calendar-page .fc .fc-button-primary:not(:disabled):active {
+  background: rgb(15, 41, 84);
+  border-color: rgb(15, 41, 84);
+}
+
+.calendar-page .fc .fc-day-today {
+  background: var(--fg-05);
+}
+
+.calendar-page .fc .fc-col-header-cell-cushion,
+.calendar-page .fc .fc-daygrid-day-number {
+  color: var(--fg);
+}
+
+.calendar-page .fc .fc-event {
+  font-family: var(--font-content);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.calendar-page .fc .fc-daygrid-event {
+  font-size: 12px;
+}
+
+.calendar-page .fc .fc-list-event:hover td {
+  background: var(--fg-05);
+}
+
+/* ---- Event detail modal ---- */
+
+.event-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-detail-club {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.event-detail-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 18px;
+  margin: 0;
+}
+
+.event-detail-facts dt {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.event-detail-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.event-detail-description {
+  white-space: pre-wrap;
+}
+
+.event-detail-error,
+.event-form-error {
+  color: var(--destructive);
+  font-weight: 700;
+  margin: 0;
+}
+
+.event-detail-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---- Event form modal ---- */
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.event-form-row .event-form-field {
+  flex: 1;
+}
+
+.event-form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.event-form-recurrence {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: var(--card-soft-bg);
+  border-radius: var(--radius-card);
+}
+
+.event-form-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-form-interval-row,
+.event-form-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-form-radio {
+  margin-bottom: 6px;
+}
+
+.event-form-interval {
+  width: 72px;
+}
+
+.event-form-until {
+  width: auto;
+}
+
+.event-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.event-form-actions .event-form-delete {
+  margin-right: auto;
+}

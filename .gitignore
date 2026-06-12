@@ -21,3 +21,9 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase emulators
+firebase-debug.log
+database-debug.log
+ui-debug.log
+.firebase/
