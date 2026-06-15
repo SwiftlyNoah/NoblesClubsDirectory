@@ -27,13 +27,51 @@ import { ensureUserRecord, getUser, setPersonType as savePersonType } from '../d
 import { userIsAdmin } from '../data';
 import { probePersonType } from './roles';
 
-// Same provider id the Expo app uses (react/config/veracross.ts). On web,
-// Veracross's missing end_session endpoint matters less than on the app:
-// firebase signOut ends our session, and the shared-computer SSO cookie
-// concern is accepted for now.
+// Same provider id the Expo app uses (react/config/veracross.ts).
 const OIDC_PROVIDER_ID = 'oidc.veracross';
 
+// Veracross's OIDC server has no end_session endpoint and ignores
+// prompt/max_age, so a Firebase signOut leaves the `_veracross_session` SSO
+// cookie in place — the next sign-in then silently re-authenticates the same
+// person. The Expo app loads this logout page in the same browser/cookie store
+// the OIDC flow uses (react/hooks/authContext.ts signOut); on web we do the
+// equivalent by opening it first-party in a popup. The cookie lives on
+// accounts.veracross.com, so it can only be cleared from that origin.
+const VERACROSS_LOGOUT_URL = 'https://accounts.veracross.com/nobles/logout';
+
+// Only Nobles community accounts (students/faculty) get a clubs account. The
+// Veracross IdP can authenticate other directory persons (e.g. parents with
+// personal emails); those are rejected with a clear message.
+const ALLOWED_EMAIL_DOMAIN = '@nobles.edu';
+
 const PERSON_TYPE_CACHE_KEY = 'clubs.personType';
+
+// Try to clear the Veracross SSO cookie by loading the logout page first-party
+// in a popup (the cookie lives on accounts.veracross.com and can only be
+// cleared from there), then closing it once it has loaded. Synchronous so it
+// can run inside a click gesture — popup blockers reject window.open after an
+// async hop, and outside a gesture entirely. Returns false when the popup was
+// blocked so the caller can fall back to a full-page redirect.
+function openVeracrossLogoutPopup(): boolean {
+  try {
+    const popup = window.open(VERACROSS_LOGOUT_URL, '_blank', 'width=480,height=600');
+    if (popup) {
+      window.setTimeout(() => popup.close(), 2500);
+      return true;
+    }
+  } catch {
+    // fall through to the blocked path
+  }
+  return false;
+}
+
+// Last resort when the popup is blocked: navigate the whole tab to the logout
+// page. A top-level navigation always carries the first-party cookie, so it
+// reliably clears the session, at the cost of leaving the SPA (the user lands
+// on Veracross's "signed out" page and can return to /clubs).
+function redirectToVeracrossLogout(): void {
+  window.location.assign(VERACROSS_LOGOUT_URL);
+}
 
 export interface AuthState {
   /** True until the initial onAuthStateChanged resolution (and profile load) completes. */
@@ -48,8 +86,19 @@ export interface AuthState {
   personType: PersonType | null;
   /** Live view of /users/public/{uid}/clubs. Empty when signed out. */
   myClubs: Record<string, UserClubEntry>;
+  /** Sign-in failure surfaced to the UI (e.g. a non-Nobles account). */
+  error: string | null;
+  /**
+   * True when a Veracross SSO session is still active after a failed sign-in
+   * and our automatic cookie-clear was blocked — the UI should offer a manual
+   * "Sign out of Veracross" action so the user can clear it within a gesture.
+   */
+  veracrossSessionLingering: boolean;
   signIn: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  dismissError: () => void;
+  /** Clear the Veracross SSO cookie from a user gesture (popup, redirect fallback). */
+  signOutVeracross: () => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -68,6 +117,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [personType, setPersonType] = useState<PersonType | null>(null);
   const [myClubs, setMyClubs] = useState<Record<string, UserClubEntry>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [veracrossSessionLingering, setVeracrossSessionLingering] = useState(false);
 
   const handleSignedIn = useCallback(async (fbUser: User) => {
     const tokenResult = await getIdTokenResult(fbUser);
@@ -81,6 +132,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
       fbUser.providerData.find((p) => p.providerId === OIDC_PROVIDER_ID)?.email ?? null;
     const resolvedEmail = (claims.email as string) ?? fbUser.email ?? providerEmail ?? null;
     const first = firstNameOf(fbUser, claims);
+
+    // Gate on a verified @nobles.edu address. Reject anything else (parents,
+    // alumni, unverifiable) before touching the database: sign back out so the
+    // user lands logged-out with an explanation rather than half-authenticated.
+    if (!resolvedEmail || !resolvedEmail.toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN)) {
+      setError('Please sign in with your Nobles (@nobles.edu) account.');
+      await signOut(getAuth());
+      // Also end the Veracross SSO session, or the next attempt silently
+      // re-authenticates this same wrong account instead of prompting for the
+      // user's Nobles credentials. This runs outside a click gesture (the OIDC
+      // popup has already closed), so the popup is usually blocked here — when
+      // it is, flag it so the banner can offer a one-click manual sign-out,
+      // which runs inside a gesture and isn't blocked.
+      setVeracrossSessionLingering(!openVeracrossLogoutPopup());
+      return;
+    }
 
     setPersonId(pid);
     setEmail(resolvedEmail);
@@ -156,6 +223,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [user]);
 
   const signIn = useCallback(async () => {
+    setError(null);
+    setVeracrossSessionLingering(false);
     const auth = getAuth();
     const provider = new OAuthProvider(OIDC_PROVIDER_ID);
     try {
@@ -173,7 +242,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    // Open the logout popup first, while still inside the click gesture, then
+    // end the Firebase session. If the popup was blocked even from this gesture,
+    // fall back to a full-page redirect once Firebase sign-out has completed.
+    const opened = openVeracrossLogoutPopup();
     await signOut(getAuth());
+    if (!opened) redirectToVeracrossLogout();
+  }, []);
+
+  // Manual Veracross sign-out the banner offers when the automatic clear was
+  // blocked. Runs from a click, so the popup is reliably allowed; redirect is
+  // the final fallback.
+  const signOutVeracross = useCallback(() => {
+    setVeracrossSessionLingering(false);
+    setError(null);
+    if (!openVeracrossLogoutPopup()) redirectToVeracrossLogout();
+  }, []);
+
+  const dismissError = useCallback(() => {
+    setError(null);
+    setVeracrossSessionLingering(false);
   }, []);
 
   const value = useMemo<AuthState>(
@@ -187,10 +275,29 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAdmin,
       personType,
       myClubs,
+      error,
+      veracrossSessionLingering,
       signIn,
       signOutUser,
+      dismissError,
+      signOutVeracross,
     }),
-    [loading, user, personId, email, firstName, isAdmin, personType, myClubs, signIn, signOutUser]
+    [
+      loading,
+      user,
+      personId,
+      email,
+      firstName,
+      isAdmin,
+      personType,
+      myClubs,
+      error,
+      veracrossSessionLingering,
+      signIn,
+      signOutUser,
+      signOutVeracross,
+      dismissError,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

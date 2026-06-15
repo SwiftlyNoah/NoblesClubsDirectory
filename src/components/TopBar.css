@@ -79,6 +79,47 @@
   padding: 4px 8px;
 }
 
+.topbar-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--negative);
+  color: #fff;
+  font-family: var(--font-content);
+  font-size: 15px;
+  padding: 10px 20px;
+  text-align: center;
+}
+
+.topbar-banner-action {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--negative);
+  background: #fff;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+.topbar-banner-action:active {
+  opacity: 0.8;
+}
+
+.topbar-banner-dismiss {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+  opacity: 0.85;
+}
+
+.topbar-banner-dismiss:hover {
+  opacity: 1;
+}
+
 @media (max-width: 760px) {
   .topbar-hamburger {
     display: block;

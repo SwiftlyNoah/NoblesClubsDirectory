@@ -5,12 +5,24 @@ import logoWhite from '../assets/logo_white.png';
 import './TopBar.css';
 
 export function TopBar() {
-  const { user, firstName, isAdmin, loading, signIn, signOutUser } = useAuth();
+  const {
+    user,
+    firstName,
+    isAdmin,
+    loading,
+    signIn,
+    signOutUser,
+    error,
+    dismissError,
+    veracrossSessionLingering,
+    signOutVeracross,
+  } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const close = () => setMenuOpen(false);
 
   return (
+    <>
     <header className="topbar">
       <Link to="/" className="topbar-brand" onClick={close}>
         <img src={logoWhite} alt="Nobles" className="topbar-logo" />
@@ -67,5 +79,19 @@ export function TopBar() {
           ))}
       </nav>
     </header>
+    {error && (
+      <div className="topbar-banner" role="alert">
+        <span>{error}</span>
+        {veracrossSessionLingering && (
+          <button className="topbar-banner-action" onClick={signOutVeracross}>
+            Sign out of Veracross
+          </button>
+        )}
+        <button className="topbar-banner-dismiss" aria-label="Dismiss" onClick={dismissError}>
+          ✕
+        </button>
+      </div>
+    )}
+    </>
   );
 }
