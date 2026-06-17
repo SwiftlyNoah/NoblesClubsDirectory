@@ -392,3 +392,43 @@ describe('i. member removal', () => {
     );
   });
 });
+
+describe('j. admin club deletion (leaf-level fan-out)', () => {
+  beforeEach(async () => {
+    // A club with a member, a pending request, and an event — the full set
+    // deleteClub() has to tear down.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const admin = ctx.database();
+      await set(ref(admin, 'clubs/members/openclub/student1'), memberPayload);
+      await set(ref(admin, 'users/public/student1/clubs/openclub'), userClubEntry);
+      await set(ref(admin, 'clubs/join_requests/openclub/student2'), requestPayload);
+      await set(ref(admin, 'users/public/student2/clubs/openclub'), userClubEntry);
+    });
+  });
+
+  it('admin1 CAN delete a club via per-leaf fan-out', async () => {
+    // Mirrors deleteClub(): members/requests are nulled at the per-uid leaf,
+    // not at the clubId node (the admin has no write rule on the node itself).
+    await assertSucceeds(
+      update(ref(db('admin1')), {
+        'clubs/directory/openclub': null,
+        'clubs/unpublished/openclub': null,
+        'users/public/leader1/clubs/openclub': null,
+        'users/public/advisor1/clubs/openclub': null,
+        'clubs/members/openclub/student1': null,
+        'users/public/student1/clubs/openclub': null,
+        'clubs/join_requests/openclub/student2': null,
+        'users/public/student2/clubs/openclub': null,
+        'events/evt1': null,
+      }),
+    );
+  });
+
+  it('admin1 CANNOT null the members node at the clubId level (why leaf delete is required)', async () => {
+    await assertFails(set(ref(db('admin1'), 'clubs/members/openclub'), null));
+  });
+
+  it('admin1 CANNOT null the join_requests node at the clubId level', async () => {
+    await assertFails(set(ref(db('admin1'), 'clubs/join_requests/openclub'), null));
+  });
+});

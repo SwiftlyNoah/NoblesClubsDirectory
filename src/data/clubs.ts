@@ -106,8 +106,6 @@ export async function deleteClub(clubId: string, club: Club): Promise<void> {
   const updates: Record<string, unknown> = {
     [PATHS.unpublishedClub(clubId)]: null,
     [PATHS.club(clubId)]: null,
-    [PATHS.clubMembers(clubId)]: null,
-    [PATHS.clubJoinRequests(clubId)]: null,
   };
   for (const [uid] of leaderUids(club)) updates[PATHS.userClub(uid, clubId)] = null;
   for (const uid of advisorUids(club)) updates[PATHS.userClub(uid, clubId)] = null;
@@ -117,10 +115,16 @@ export async function deleteClub(clubId: string, club: Club): Promise<void> {
     get(ref(db(), PATHS.clubJoinRequests(clubId))),
     get(query(ref(db(), PATHS.events), orderByChild('clubId'), equalTo(clubId))),
   ]);
+  // The rules only grant write on members/join_requests at the per-uid leaf
+  // (an admin has no write rule on the clubId-level node), so delete each
+  // entry individually rather than nulling the whole subtree — RTDB removes
+  // the now-empty parent node automatically.
   for (const uid of Object.keys(membersSnap.val() ?? {})) {
+    updates[PATHS.clubMember(clubId, uid)] = null;
     updates[PATHS.userClub(uid, clubId)] = null;
   }
   for (const uid of Object.keys(requestsSnap.val() ?? {})) {
+    updates[PATHS.clubJoinRequest(clubId, uid)] = null;
     updates[PATHS.userClub(uid, clubId)] = null;
   }
   for (const eventId of Object.keys(eventsSnap.val() ?? {})) {

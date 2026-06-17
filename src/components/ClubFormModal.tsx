@@ -4,7 +4,11 @@ import {
   SUBJECTS,
   clubImageSrc,
   findUserWithEmail,
+  fullName,
+  getUser,
+  personTypeFromRoles,
   randomID,
+  stripUndefined,
   type Club,
   type ClubAdvisor,
   type ClubLeader,
@@ -28,7 +32,7 @@ interface ClubFormModalProps {
 }
 
 export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabel }: ClubFormModalProps) {
-  const { uid, email, firstName, personType } = useAuth();
+  const { uid, email, firstName, personId, personType } = useAuth();
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
@@ -54,6 +58,7 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
   // (Re)initialize the form whenever the modal opens.
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     setName(club?.name ?? '');
     setSubject(club?.subject ?? '');
     setDescription(club?.description ?? '');
@@ -64,16 +69,30 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
       setLeaders({ ...(club.leader ?? {}) });
       setAdvisors({ ...(club.advisor ?? {}) });
     } else if (uid) {
-      // The person registering a new club joins it automatically:
-      // students lead, faculty advise (unknown person types default to leader).
-      const self = { name: firstName ?? '', email: email ?? '' };
-      if (personType === 'faculty') {
-        setLeaders({});
-        setAdvisors({ [uid]: self });
-      } else {
-        setLeaders({ [uid]: self });
-        setAdvisors({});
-      }
+      // The person registering a new club joins it automatically: students
+      // lead, faculty advise (unknown person types default to leader). Pull
+      // their name + Veracross id from their own /users/public record — the
+      // same source addLeader/addAdvisor use — so the self entry matches and
+      // carries the `id` field (falling back to the auth context if the read
+      // races or fails).
+      setLeaders({});
+      setAdvisors({});
+      void (async () => {
+        const me = await getUser(uid).catch(() => null);
+        if (cancelled) return;
+        const self: ClubLeader = stripUndefined({
+          name: fullName(me) || firstName || '',
+          email: me?.email ?? email ?? '',
+          id: me?.id ?? personId ?? undefined,
+        });
+        if (personType === 'faculty') {
+          setLeaders({});
+          setAdvisors({ [uid]: self });
+        } else {
+          setLeaders({ [uid]: self });
+          setAdvisors({});
+        }
+      })();
     } else {
       setLeaders({});
       setAdvisors({});
@@ -87,7 +106,10 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
     setImageError(null);
     setSubmitError(null);
     setBusy(false);
-  }, [open, club, uid, email, firstName, personType]);
+    return () => {
+      cancelled = true;
+    };
+  }, [open, club, uid, email, firstName, personId, personType]);
 
   const filePreview = useMemo(() => (imageFile ? URL.createObjectURL(imageFile) : null), [imageFile]);
   useEffect(() => {
@@ -122,14 +144,19 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
         setLeaderError(`No account found with email: ${lookup}`);
         return;
       }
-      if (found.person_type === 'faculty') {
+      if (personTypeFromRoles(found.roles) === 'faculty') {
         setLeaderError(`${lookup} is not a student — add them as an advisor instead.`);
         return;
       }
       const role = leaderRole.trim();
       setLeaders((prev) => ({
         ...prev,
-        [found.uid]: { name: found.first, email: found.email, ...(role ? { role } : {}) },
+        [found.uid]: stripUndefined({
+          name: fullName(found) || found.first,
+          email: found.email,
+          id: found.id,
+          ...(role ? { role } : {}),
+        }),
       }));
       setLeaderEmail('');
       setLeaderRole('');
@@ -148,11 +175,18 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
         setAdvisorError(`No account found with email: ${lookup}`);
         return;
       }
-      if (found.person_type === 'student') {
+      if (personTypeFromRoles(found.roles) === 'student') {
         setAdvisorError(`${lookup} is not a faculty member — add them as a leader instead.`);
         return;
       }
-      setAdvisors((prev) => ({ ...prev, [found.uid]: { name: found.first, email: found.email } }));
+      setAdvisors((prev) => ({
+        ...prev,
+        [found.uid]: stripUndefined({
+          name: fullName(found) || found.first,
+          email: found.email,
+          id: found.id,
+        }),
+      }));
       setAdvisorEmail('');
     } catch {
       setAdvisorError('Lookup failed — please try again.');

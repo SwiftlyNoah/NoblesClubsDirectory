@@ -15,12 +15,16 @@ export type PersonType = 'student' | 'faculty';
 export interface ClubLeader {
   name: string;
   email: string;
+  /** Veracross person id, mirrored from the user's /users/public record. */
+  id?: string;
   role?: string;
 }
 
 export interface ClubAdvisor {
   name: string;
   email: string;
+  /** Veracross person id, mirrored from the user's /users/public record. */
+  id?: string;
 }
 
 export interface Club {
@@ -66,12 +70,17 @@ export interface UserClubEntry {
 }
 
 export interface UserPublic {
-  first: string;
   email: string;
+  /** First (given) name. */
+  first: string;
+  /** Last (family) name. */
+  last?: string;
+  /** Firebase auth uid (also the record key). */
   uid: string;
-  /** Veracross person id from the OIDC claim — keys the fall account migration. */
-  veracross_person_id?: string;
-  person_type?: PersonType;
+  /** Veracross person id — keys the fall account migration. */
+  id?: string;
+  /** Comma-joined role list, e.g. "student" or "faculty" or "faculty, parent". */
+  roles?: string;
   clubs?: Record<string, UserClubEntry>;
 }
 

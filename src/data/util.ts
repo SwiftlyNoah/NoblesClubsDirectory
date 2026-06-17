@@ -21,6 +21,12 @@ export function stripUndefined<T>(value: T): T {
   return value;
 }
 
+/** "First Last" from a user record, collapsing to whatever part is present. */
+export function fullName(u: { first?: string; last?: string } | null | undefined): string {
+  if (!u) return '';
+  return [u.first, u.last].filter(Boolean).join(' ').trim();
+}
+
 /** School years run July 1 – June 30: June 2027 is still "2026-2027". */
 export function schoolYearFor(date: Date): string {
   const startYear = date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;

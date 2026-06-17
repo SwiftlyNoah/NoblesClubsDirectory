@@ -23,7 +23,7 @@ import {
   signOut,
 } from '../lib/firebase';
 import { PATHS, type PersonType, type UserClubEntry } from '../data';
-import { ensureUserRecord, getUser, setPersonType as savePersonType } from '../data';
+import { ensureUserRecord, getUser, personTypeFromRoles, setUserRoles } from '../data';
 import { userIsAdmin } from '../data';
 import { probePersonType } from './roles';
 
@@ -44,7 +44,7 @@ const VERACROSS_LOGOUT_URL = 'https://accounts.veracross.com/nobles/logout';
 // personal emails); those are rejected with a clear message.
 const ALLOWED_EMAIL_DOMAIN = '@nobles.edu';
 
-const PERSON_TYPE_CACHE_KEY = 'clubs.personType';
+const ROLES_CACHE_KEY = 'clubs.roles';
 
 // Try to clear the Veracross SSO cookie by loading the logout page first-party
 // in a popup (the cookie lives on accounts.veracross.com and can only be
@@ -103,9 +103,13 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function firstNameOf(user: User, claims: Record<string, unknown>): string {
-  const name = (claims.name as string) || user.displayName || '';
-  return name.split(' ')[0] || '';
+// The Veracross OIDC `name` claim carries the full display name; split it into
+// first + last so the user record stores both (leaders see full names in club
+// listings). Falls back to the Firebase displayName.
+function splitName(user: User, claims: Record<string, unknown>): { first: string; last: string } {
+  const full = ((claims.name as string) || user.displayName || '').trim();
+  const parts = full.split(/\s+/).filter(Boolean);
+  return { first: parts[0] ?? '', last: parts.slice(1).join(' ') };
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -131,7 +135,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const providerEmail =
       fbUser.providerData.find((p) => p.providerId === OIDC_PROVIDER_ID)?.email ?? null;
     const resolvedEmail = (claims.email as string) ?? fbUser.email ?? providerEmail ?? null;
-    const first = firstNameOf(fbUser, claims);
+    const { first, last } = splitName(fbUser, claims);
 
     // Gate on a verified @nobles.edu address. Reject anything else (parents,
     // alumni, unverifiable) before touching the database: sign back out so the
@@ -154,31 +158,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setFirstName(first || null);
 
     await ensureUserRecord(fbUser.uid, {
-      first,
       email: resolvedEmail ?? '',
-      veracrossPersonId: pid ?? undefined,
+      first,
+      last: last || undefined,
+      id: pid ?? undefined,
     });
 
     setIsAdmin(await userIsAdmin(fbUser.uid));
 
-    // person_type: sessionStorage → RTDB record → Veracross probe (cached back).
-    const cached = sessionStorage.getItem(PERSON_TYPE_CACHE_KEY) as PersonType | null;
-    if (cached === 'student' || cached === 'faculty') {
-      setPersonType(cached);
+    // roles: sessionStorage → RTDB record → Veracross probe (cached + persisted
+    // back). The web only authenticates students/faculty, so the probed roles
+    // string is a single value here.
+    const cached = sessionStorage.getItem(ROLES_CACHE_KEY);
+    if (cached) {
+      setPersonType(personTypeFromRoles(cached));
       return;
     }
     const record = await getUser(fbUser.uid);
-    if (record?.person_type) {
-      setPersonType(record.person_type);
-      sessionStorage.setItem(PERSON_TYPE_CACHE_KEY, record.person_type);
+    if (record?.roles) {
+      setPersonType(personTypeFromRoles(record.roles));
+      sessionStorage.setItem(ROLES_CACHE_KEY, record.roles);
       return;
     }
     if (pid) {
       const probed = await probePersonType(tokenResult.token, pid);
       if (probed) {
         setPersonType(probed);
-        sessionStorage.setItem(PERSON_TYPE_CACHE_KEY, probed);
-        await savePersonType(fbUser.uid, probed);
+        sessionStorage.setItem(ROLES_CACHE_KEY, probed);
+        await setUserRoles(fbUser.uid, probed);
       }
     }
   }, []);
@@ -201,7 +208,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setFirstName(null);
         setIsAdmin(false);
         setPersonType(null);
-        sessionStorage.removeItem(PERSON_TYPE_CACHE_KEY);
+        sessionStorage.removeItem(ROLES_CACHE_KEY);
       }
       setLoading(false);
     });
