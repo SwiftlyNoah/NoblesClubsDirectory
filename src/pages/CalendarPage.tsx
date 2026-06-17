@@ -7,7 +7,6 @@ import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
 import type { EventClickArg, EventInput, EventSourceFuncArg } from '@fullcalendar/core';
 import { useAuth } from '../auth/AuthProvider';
 import {
-  SUBJECTS,
   expandOccurrences,
   fetchAllEvents,
   fetchClubDirectory,
@@ -16,7 +15,7 @@ import {
   type ClubEventWithId,
   type ClubWithId,
 } from '../data';
-import { CalendarFilters } from '../components/calendar/CalendarFilters';
+import { CalendarFilters, type CalendarFilter } from '../components/calendar/CalendarFilters';
 import { EventDetailModal } from '../components/calendar/EventDetailModal';
 import { EventFormModal } from '../components/calendar/EventFormModal';
 import { EmptyState } from '../components/EmptyState';
@@ -36,9 +35,7 @@ export function CalendarPage() {
   const [clubs, setClubs] = useState<ClubWithId[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedClubId, setSelectedClubId] = useState('');
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([...SUBJECTS]);
-  const [myClubsOnly, setMyClubsOnly] = useState(false);
+  const [filter, setFilter] = useState<CalendarFilter>({ kind: 'all' });
 
   const [selected, setSelected] = useState<SelectedOccurrence | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -69,22 +66,26 @@ export function CalendarPage() {
       });
   }, []);
 
-  // The signed-out "My clubs" state can't persist across a sign-out.
+  // The signed-out "My clubs" filter can't persist across a sign-out.
   useEffect(() => {
-    if (!user) setMyClubsOnly(false);
-  }, [user]);
+    if (!user && filter.kind === 'myClubs') setFilter({ kind: 'all' });
+  }, [user, filter.kind]);
 
   const filtered = useMemo(() => {
     if (!events) return [];
-    // All subjects selected = no subject filter (covers legacy subjects too).
-    const subjectFilterActive = selectedSubjects.length !== SUBJECTS.length;
-    return events.filter(
-      (event) =>
-        (selectedClubId === '' || event.clubId === selectedClubId) &&
-        (!subjectFilterActive || selectedSubjects.includes(event.clubSubject)) &&
-        (!myClubsOnly || event.clubId in myClubs)
-    );
-  }, [events, selectedClubId, selectedSubjects, myClubsOnly, myClubs]);
+    return events.filter((event) => {
+      switch (filter.kind) {
+        case 'all':
+          return true;
+        case 'subject':
+          return event.clubSubject === filter.subject;
+        case 'club':
+          return event.clubId === filter.clubId;
+        case 'myClubs':
+          return event.clubId in myClubs;
+      }
+    });
+  }, [events, filter, myClubs]);
 
   // The events function below is stable; it reads the latest filtered list here.
   const filteredRef = useRef(filtered);
@@ -175,13 +176,9 @@ export function CalendarPage() {
         <>
           <CalendarFilters
             clubs={clubs}
-            selectedClubId={selectedClubId}
-            onClubChange={setSelectedClubId}
-            selectedSubjects={selectedSubjects}
-            onSubjectsChange={setSelectedSubjects}
+            filter={filter}
+            onChange={setFilter}
             showMyClubsToggle={user !== null}
-            myClubsOnly={myClubsOnly}
-            onMyClubsOnlyChange={setMyClubsOnly}
           />
           <FullCalendar
             ref={calendarRef}

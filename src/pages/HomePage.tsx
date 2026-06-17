@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import {
-  SUBJECTS,
   fetchClubDirectory,
   fetchMemberCounts,
   getClub,
@@ -23,7 +22,7 @@ export function HomePage() {
 
   const [clubs, setClubs] = useState<ClubWithId[] | null>(null);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([...SUBJECTS]);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [deepLinkedClub, setDeepLinkedClub] = useState<ClubWithId | null>(null);
@@ -68,12 +67,12 @@ export function HomePage() {
     const term = search.trim().toLowerCase();
     return clubs.filter(
       (club) =>
-        selectedSubjects.includes(club.subject) &&
+        (selectedSubject === null || club.subject === selectedSubject) &&
         (term === '' ||
           club.name.toLowerCase().includes(term) ||
           club.description?.toLowerCase().includes(term))
     );
-  }, [clubs, selectedSubjects, search]);
+  }, [clubs, selectedSubject, search]);
 
   return (
     <div>
@@ -103,7 +102,15 @@ export function HomePage() {
 
         {filtersOpen && (
           <div className="home-filters">
-            <SubjectFilters selected={selectedSubjects} onChange={setSelectedSubjects} />
+            <div className="subject-filters">
+              <button
+                className={`chip${selectedSubject === null ? ' selected' : ''}`}
+                onClick={() => setSelectedSubject(null)}
+              >
+                All Clubs
+              </button>
+              <SubjectFilters selected={selectedSubject} onChange={setSelectedSubject} />
+            </div>
           </div>
         )}
 

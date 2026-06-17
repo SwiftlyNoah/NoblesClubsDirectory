@@ -31,6 +31,12 @@
   gap: 10px;
 }
 
+/* Match the chip height to the club picker so the row is uniform. */
+.calendar-filters-row .chip {
+  height: 38px;
+  box-sizing: border-box;
+}
+
 .calendar-club-select {
   width: auto;
   min-width: 200px;

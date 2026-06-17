@@ -1,57 +1,81 @@
 import { SubjectFilters } from '../SubjectFilters';
 import type { ClubWithId } from '../../data';
 
+/**
+ * The calendar's single active filter. Exactly one is in effect at a time:
+ * everything ('all'), one subject, one club, or the viewer's own clubs.
+ */
+export type CalendarFilter =
+  | { kind: 'all' }
+  | { kind: 'subject'; subject: string }
+  | { kind: 'club'; clubId: string }
+  | { kind: 'myClubs' };
+
 interface CalendarFiltersProps {
   /** Active clubs, used to populate the club dropdown. */
   clubs: ClubWithId[];
-  /** Selected club id, or '' for "All clubs". */
-  selectedClubId: string;
-  onClubChange: (clubId: string) => void;
-  selectedSubjects: string[];
-  onSubjectsChange: (subjects: string[]) => void;
-  /** Show the "My clubs" toggle (signed-in users only). */
+  filter: CalendarFilter;
+  onChange: (filter: CalendarFilter) => void;
+  /** Show the "My clubs" chip (signed-in users only). */
   showMyClubsToggle: boolean;
-  myClubsOnly: boolean;
-  onMyClubsOnlyChange: (value: boolean) => void;
 }
 
-/** Controlled filter row for the events calendar: club, subjects, my-clubs. */
+/** Controlled, mutually-exclusive filter row for the events calendar. */
 export function CalendarFilters({
   clubs,
-  selectedClubId,
-  onClubChange,
-  selectedSubjects,
-  onSubjectsChange,
+  filter,
+  onChange,
   showMyClubsToggle,
-  myClubsOnly,
-  onMyClubsOnlyChange,
 }: CalendarFiltersProps) {
   return (
     <div className="calendar-filters">
       <div className="calendar-filters-row">
-        <select
-          className="select-field calendar-club-select"
-          aria-label="Filter by club"
-          value={selectedClubId}
-          onChange={(event) => onClubChange(event.target.value)}
+        <button
+          className={`chip${filter.kind === 'all' ? ' selected' : ''}`}
+          onClick={() => onChange({ kind: 'all' })}
         >
-          <option value="">All clubs</option>
+          All clubs
+        </button>
+        {showMyClubsToggle && (
+          <button
+            className={`chip${filter.kind === 'myClubs' ? ' selected' : ''}`}
+            onClick={() =>
+              onChange(filter.kind === 'myClubs' ? { kind: 'all' } : { kind: 'myClubs' })
+            }
+          >
+            My clubs
+          </button>
+        )}
+        <select
+          className={`select-field calendar-club-select${
+            filter.kind === 'club' ? ' selected' : ''
+          }`}
+          aria-label="Filter by club"
+          value={filter.kind === 'club' ? filter.clubId : ''}
+          onChange={(event) =>
+            onChange(
+              event.target.value
+                ? { kind: 'club', clubId: event.target.value }
+                : { kind: 'all' }
+            )
+          }
+        >
+          <option value="">Select a club</option>
           {clubs.map((club) => (
             <option key={club.id} value={club.id}>
               {club.name}
             </option>
           ))}
         </select>
-        {showMyClubsToggle && (
-          <button
-            className={`chip${myClubsOnly ? ' selected' : ''}`}
-            onClick={() => onMyClubsOnlyChange(!myClubsOnly)}
-          >
-            My clubs
-          </button>
-        )}
       </div>
-      <SubjectFilters selected={selectedSubjects} onChange={onSubjectsChange} />
+      <div className="subject-filters">
+        <SubjectFilters
+          selected={filter.kind === 'subject' ? filter.subject : null}
+          onChange={(subject) =>
+            onChange(subject ? { kind: 'subject', subject } : { kind: 'all' })
+          }
+        />
+      </div>
     </div>
   );
 }
