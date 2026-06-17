@@ -23,9 +23,9 @@ import {
   signOut,
 } from '../lib/firebase';
 import { PATHS, type PersonType, type UserClubEntry } from '../data';
-import { ensureUserRecord, getUser, personTypeFromRoles, setUserRoles } from '../data';
+import { ensureUserRecord, getUser, personTypeFromRoles } from '../data';
 import { userIsAdmin } from '../data';
-import { probePersonType } from './roles';
+import { fetchPersonTypeAndDetails } from './roles';
 
 // Same provider id the Expo app uses (react/config/veracross.ts).
 const OIDC_PROVIDER_ID = 'oidc.veracross';
@@ -43,8 +43,6 @@ const VERACROSS_LOGOUT_URL = 'https://accounts.veracross.com/nobles/logout';
 // Veracross IdP can authenticate other directory persons (e.g. parents with
 // personal emails); those are rejected with a clear message.
 const ALLOWED_EMAIL_DOMAIN = '@nobles.edu';
-
-const ROLES_CACHE_KEY = 'clubs.roles';
 
 // Try to clear the Veracross SSO cookie by loading the logout page first-party
 // in a popup (the cookie lives on accounts.veracross.com and can only be
@@ -135,7 +133,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const providerEmail =
       fbUser.providerData.find((p) => p.providerId === OIDC_PROVIDER_ID)?.email ?? null;
     const resolvedEmail = (claims.email as string) ?? fbUser.email ?? providerEmail ?? null;
-    const { first, last } = splitName(fbUser, claims);
 
     // Gate on a verified @nobles.edu address. Reject anything else (parents,
     // alumni, unverifiable) before touching the database: sign back out so the
@@ -155,39 +152,50 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     setPersonId(pid);
     setEmail(resolvedEmail);
+
+    // Resolve identity + roles from the Veracross v3 person record — the same
+    // source the native app uses (fetchPersonTypeAndDetails). The OIDC ID token
+    // carries no reliable name claim and no roles, so without this the public
+    // record gets written with an empty first/last and no roles. Skip the probe
+    // when the stored record is already complete (returning user); fetch — and
+    // self-heal — whenever a name or roles field is missing.
+    const existing = await getUser(fbUser.uid);
+    const complete = Boolean(existing?.first && existing?.last && existing?.roles);
+    const profile = !complete && pid
+      ? await fetchPersonTypeAndDetails(tokenResult.token, pid)
+      : null;
+
+    // Prefer the v3 record, then the OIDC claim name, then whatever's already
+    // stored — never blank out an existing value if the probe couldn't run.
+    const claimName = splitName(fbUser, claims);
+    const first =
+      profile?.details?.preferred_name ||
+      profile?.details?.first_name ||
+      claimName.first ||
+      existing?.first ||
+      '';
+    const last =
+      profile?.details?.last_name ||
+      claimName.last ||
+      existing?.last ||
+      undefined;
+    const rolesString =
+      (profile && profile.roles.length ? profile.roles.join(', ') : undefined) ??
+      existing?.roles ??
+      undefined;
+
     setFirstName(first || null);
 
     await ensureUserRecord(fbUser.uid, {
-      email: resolvedEmail ?? '',
+      email: resolvedEmail,
       first,
-      last: last || undefined,
+      last,
       id: pid ?? undefined,
+      roles: rolesString,
     });
 
     setIsAdmin(await userIsAdmin(fbUser.uid));
-
-    // roles: sessionStorage → RTDB record → Veracross probe (cached + persisted
-    // back). The web only authenticates students/faculty, so the probed roles
-    // string is a single value here.
-    const cached = sessionStorage.getItem(ROLES_CACHE_KEY);
-    if (cached) {
-      setPersonType(personTypeFromRoles(cached));
-      return;
-    }
-    const record = await getUser(fbUser.uid);
-    if (record?.roles) {
-      setPersonType(personTypeFromRoles(record.roles));
-      sessionStorage.setItem(ROLES_CACHE_KEY, record.roles);
-      return;
-    }
-    if (pid) {
-      const probed = await probePersonType(tokenResult.token, pid);
-      if (probed) {
-        setPersonType(probed);
-        sessionStorage.setItem(ROLES_CACHE_KEY, probed);
-        await setUserRoles(fbUser.uid, probed);
-      }
-    }
+    setPersonType(profile?.personType ?? personTypeFromRoles(rolesString));
   }, []);
 
   useEffect(() => {
@@ -208,7 +216,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setFirstName(null);
         setIsAdmin(false);
         setPersonType(null);
-        sessionStorage.removeItem(ROLES_CACHE_KEY);
       }
       setLoading(false);
     });
