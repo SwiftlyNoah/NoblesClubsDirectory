@@ -3,13 +3,12 @@ import './ClubCard.css';
 
 interface ClubCardProps {
   club: ClubWithId;
-  memberCount?: number;
   onClick: () => void;
   /** Render order index for the staggered entrance animation. */
   index?: number;
 }
 
-export function ClubCard({ club, memberCount, onClick, index = 0 }: ClubCardProps) {
+export function ClubCard({ club, onClick, index = 0 }: ClubCardProps) {
   const accent = subjectColor(club.subject);
   const image = clubImageSrc(club);
 
@@ -30,11 +29,6 @@ export function ClubCard({ club, memberCount, onClick, index = 0 }: ClubCardProp
         <p className="club-card-description">{club.description}</p>
         <div className="club-card-footer">
           {!club.is_active && <span className="club-card-inactive-tag">Inactive</span>}
-          {memberCount !== undefined && memberCount > 0 && (
-            <span className="club-card-members">
-              {memberCount} member{memberCount === 1 ? '' : 's'}
-            </span>
-          )}
           {(club.join_policy ?? 'open') === 'approval' && (
             <span className="club-card-policy">Approval required</span>
           )}

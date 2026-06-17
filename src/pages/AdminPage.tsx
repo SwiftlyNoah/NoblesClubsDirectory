@@ -138,7 +138,7 @@ export function AdminPage() {
         <ClubDetailModal
           club={selected.club}
           onClose={() => setSelected(null)}
-          showJoin={selected.kind === 'published'}
+          showJoin={false}
           actions={
             selected.kind === 'published' ? (
               <>

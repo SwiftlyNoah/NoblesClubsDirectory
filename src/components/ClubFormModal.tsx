@@ -197,6 +197,12 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
     setLeaders((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)));
   };
 
+  const updateLeaderRole = (key: string, role: string) => {
+    setLeaders((prev) =>
+      prev[key] ? { ...prev, [key]: { ...prev[key], role } } : prev
+    );
+  };
+
   const removeAdvisor = (key: string) => {
     setAdvisors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)));
   };
@@ -219,6 +225,12 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
         image = uploaded.image;
         imageUrl = uploaded.image_url;
       }
+      const normalizedLeaders = Object.fromEntries(
+        Object.entries(leaders).map(([key, leader]) => {
+          const role = leader.role?.trim();
+          return [key, stripUndefined({ ...leader, role: role || undefined })];
+        })
+      );
       const entry: Club = {
         name: name.trim(),
         description: description.trim(),
@@ -229,7 +241,7 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
         sign_up: signUp.trim() || undefined,
         is_active: club?.is_active ?? true,
         join_policy: joinPolicy,
-        leader: Object.keys(leaders).length > 0 ? leaders : undefined,
+        leader: Object.keys(normalizedLeaders).length > 0 ? normalizedLeaders : undefined,
         advisor: Object.keys(advisors).length > 0 ? advisors : undefined,
       };
       await onSubmit(club?.id ?? randomID(), entry);
@@ -369,8 +381,14 @@ export function ClubFormModal({ open, onClose, club, onSubmit, title, submitLabe
             <div key={key} className="club-form-person">
               <span>
                 <strong>{leader.name || leader.email}</strong>
-                {leader.role ? ` — ${leader.role}` : ''}
               </span>
+              <input
+                className="text-field"
+                type="text"
+                placeholder="Role (e.g. President)"
+                value={leader.role ?? ''}
+                onChange={(event) => updateLeaderRole(key, event.target.value)}
+              />
               <button className="club-form-remove" onClick={() => removeLeader(key)}>
                 Remove
               </button>

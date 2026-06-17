@@ -1,13 +1,11 @@
-import { SubjectFilters } from '../SubjectFilters';
 import type { ClubWithId } from '../../data';
 
 /**
  * The calendar's single active filter. Exactly one is in effect at a time:
- * everything ('all'), one subject, one club, or the viewer's own clubs.
+ * everything ('all'), one club, or the viewer's own clubs.
  */
 export type CalendarFilter =
   | { kind: 'all' }
-  | { kind: 'subject'; subject: string }
   | { kind: 'club'; clubId: string }
   | { kind: 'myClubs' };
 
@@ -67,14 +65,6 @@ export function CalendarFilters({
             </option>
           ))}
         </select>
-      </div>
-      <div className="subject-filters">
-        <SubjectFilters
-          selected={filter.kind === 'subject' ? filter.subject : null}
-          onChange={(subject) =>
-            onChange(subject ? { kind: 'subject', subject } : { kind: 'all' })
-          }
-        />
       </div>
     </div>
   );

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import {
   fetchClubDirectory,
-  fetchMemberCounts,
   getClub,
   type ClubWithId,
 } from '../data';
@@ -16,12 +15,11 @@ import bgvid from '../assets/bgvid.mp4';
 import './HomePage.css';
 
 export function HomePage() {
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { clubId } = useParams();
 
   const [clubs, setClubs] = useState<ClubWithId[] | null>(null);
-  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -37,15 +35,6 @@ export function HomePage() {
       }
     })();
   }, [isAdmin]);
-
-  // Member counts are reader-gated to signed-in users.
-  useEffect(() => {
-    if (!user) {
-      setMemberCounts({});
-      return;
-    }
-    fetchMemberCounts().then(setMemberCounts).catch(() => {});
-  }, [user]);
 
   // Deep link: /club/:clubId may reference a club not in the loaded list
   // (e.g. inactive). Resolve it directly.
@@ -125,7 +114,6 @@ export function HomePage() {
                 key={club.id}
                 club={club}
                 index={index}
-                memberCount={memberCounts[club.id]}
                 onClick={() => navigate(`/club/${club.id}`)}
               />
             ))}

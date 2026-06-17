@@ -105,10 +105,3 @@ export async function listJoinRequests(clubId: string): Promise<Record<string, J
   const snapshot = await get(ref(db(), PATHS.clubJoinRequests(clubId)));
   return (snapshot.val() as Record<string, JoinRequest>) ?? {};
 }
-
-/** All member counts in one read (signed-in users only, per rules). */
-export async function fetchMemberCounts(): Promise<Record<string, number>> {
-  const snapshot = await get(ref(db(), PATHS.members));
-  const all = (snapshot.val() as Record<string, Record<string, MemberEntry>>) ?? {};
-  return Object.fromEntries(Object.entries(all).map(([clubId, m]) => [clubId, Object.keys(m).length]));
-}

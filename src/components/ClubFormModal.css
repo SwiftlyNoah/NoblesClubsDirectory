@@ -82,6 +82,16 @@
   font-size: 15px;
 }
 
+.club-form-person > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.club-form-person .text-field {
+  flex: 0 1 180px;
+  min-width: 0;
+}
+
 .club-form-remove {
   color: var(--destructive);
   font-weight: 700;

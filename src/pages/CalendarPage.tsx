@@ -77,8 +77,6 @@ export function CalendarPage() {
       switch (filter.kind) {
         case 'all':
           return true;
-        case 'subject':
-          return event.clubSubject === filter.subject;
         case 'club':
           return event.clubId === filter.clubId;
         case 'myClubs':

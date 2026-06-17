@@ -18,7 +18,7 @@
       },
       "members": {
         "$clubId": {
-          ".read": "auth != null",
+          ".read": "auth != null && (root.child('clubs/members').child($clubId).hasChild(auth.uid) || root.child('clubs/directory').child($clubId).child('leader').hasChild(auth.uid) || root.child('clubs/directory').child($clubId).child('advisor').hasChild(auth.uid) || root.child('clubs/admins').hasChild(auth.uid))",
           "$uid": {
             ".write": "auth != null && ((auth.uid === $uid && root.child('clubs/directory').child($clubId).exists() && (!newData.exists() || root.child('clubs/directory').child($clubId).child('join_policy').val() !== 'approval')) || root.child('clubs/directory').child($clubId).child('leader').hasChild(auth.uid) || root.child('clubs/directory').child($clubId).child('advisor').hasChild(auth.uid) || root.child('clubs/admins').hasChild(auth.uid))",
             ".validate": "!newData.exists() || newData.hasChildren(['name', 'email', 'joinedAt'])"
