@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc -b",
-    "test:rules": "firebase emulators:exec --only database \"vitest run rules-tests\""
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@fontsource/eb-garamond": "^5.1.0",

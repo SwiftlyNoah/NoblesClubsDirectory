@@ -35,8 +35,11 @@ VITE_USE_EMULATOR=1 npm run dev   # against the local emulator suite
 firebase emulators:start --only database,auth,storage
 npm run build                     # typecheck + production build to dist/
 npm run lint
-npm run test:rules                # security-rules tests (needs JDK 21+: brew install openjdk@21)
 ```
+
+> The shared Realtime Database rules now live in `server/database.rules.json`
+> (tested in `server/rules-tests/`). The local emulator above runs the database
+> with default rules; rule changes/tests happen in `server/`.
 
 ## Architecture
 
@@ -49,11 +52,13 @@ npm run test:rules                # security-rules tests (needs JDK 21+: brew in
 - `src/components/`, `src/pages/` — UI, styled per the app's design guide
   (react/docs/DESIGN_GUIDE.md): EB Garamond display / Nunito content,
   Nobles navy, subject accent colors
-- `database.rules.json` / `storage.rules` — security rules, tested in
-  `rules-tests/`. Deploy with `firebase deploy --only database,storage`.
-  **Note:** `database.rules.json` is the full ruleset for the shared RTDB
-  (it includes the app's `/global`, `/leaderboards`, etc.) — the pre-rewrite
-  console rules are snapshotted in `firebase-snapshot/`.
+- `storage.rules` — Storage security rules (deploy with
+  `firebase deploy --only storage`).
+  **Note:** the shared Realtime Database rules (the full ruleset incl. `/clubs`,
+  `/global`, `/leaderboards`, `/notifications`, …) now live in
+  **`server/database.rules.json`** and are deployed/tested from `server/` (see
+  `server/rules-tests/`). The pre-rewrite console rules are snapshotted in
+  `firebase-snapshot/`.
 
 ## Database layout
 
@@ -70,5 +75,5 @@ npm run test:rules                # security-rules tests (needs JDK 21+: brew in
 ## Deployment
 
 `npm run build`, then publish `dist/` to the static location currently
-serving `/clubs`. Deploy the security rules in the same change window the new
-build goes live.
+serving `/clubs`. Deploy Storage rules (`firebase deploy --only storage`) in the
+same change window; the Realtime Database rules are deployed from `server/`.
